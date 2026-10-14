@@ -1,6 +1,5 @@
 import { DEFAULT_MODEL_PROVIDER_LIST } from 'model-bank/modelProviders';
 
-import CustomProviderDetail from './CustomProviderDetail';
 import ProviderDetail from './index';
 
 const ProviderDetialPage = (props: { id?: string | null }) => {
@@ -10,9 +9,6 @@ const ProviderDetialPage = (props: { id?: string | null }) => {
   // if builtin provider
   if (!!builtinProviderCard) return <ProviderDetail source={'builtin'} {...builtinProviderCard} />;
 
-  if (id) {
-    return <CustomProviderDetail id={id} />;
-  }
   return null;
 };
 

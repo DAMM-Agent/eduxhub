@@ -7,6 +7,7 @@ import {
 } from '@lobechat/heterogeneous-agents';
 import { RequestTrigger } from '@lobechat/types';
 import { TRPCError } from '@trpc/server';
+import { ModelProviderSchema } from 'model-bank';
 import { z } from 'zod';
 
 import { withScopedPermission } from '@/business/server/trpc-middlewares/rbacPermission';
@@ -77,7 +78,7 @@ export const aiProviderRouter = router({
     .use(withScopedPermission('ai_provider:update'))
     .input(
       z.object({
-        id: z.string(),
+        id: ModelProviderSchema,
         model: z.string().optional(),
       }),
     )
@@ -151,7 +152,7 @@ export const aiProviderRouter = router({
     }),
 
   getAiProviderById: aiProviderProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: ModelProviderSchema }))
 
     .query(async ({ input, ctx }): Promise<AiProviderDetailItem | undefined> => {
       const detail = await ctx.aiInfraRepos.getAiProviderDetail(
@@ -213,7 +214,7 @@ export const aiProviderRouter = router({
    * renderer's possibly stale store state.
    */
   getProviderBindingRuntime: aiProviderProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: ModelProviderSchema }))
     .mutation(async ({ input, ctx }): Promise<HeterogeneousProviderBindingRuntime> => {
       const state = await getUserScopedAiProviderRuntimeState(ctx.userId, () =>
         ctx.aiInfraRepos.getAiProviderRuntimeState(KeyVaultsGateKeeper.getUserKeyVaults),
@@ -254,7 +255,7 @@ export const aiProviderRouter = router({
   removeAiProvider: aiProviderProcedure
     .use(withScopedPermission('ai_provider:delete'))
     .use(requireWorkspaceRoleWhenScoped('admin'))
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: ModelProviderSchema }))
     .mutation(async ({ input, ctx }) => {
       return ctx.aiProviderModel.delete(input.id);
     }),
@@ -264,7 +265,7 @@ export const aiProviderRouter = router({
     .input(
       z.object({
         enabled: z.boolean(),
-        id: z.string(),
+        id: ModelProviderSchema,
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -283,7 +284,7 @@ export const aiProviderRouter = router({
     .use(requireWorkspaceRoleWhenScoped('admin'))
     .input(
       z.object({
-        id: z.string(),
+        id: ModelProviderSchema,
         value: UpdateAiProviderSchema,
       }),
     )
@@ -296,7 +297,7 @@ export const aiProviderRouter = router({
     .use(requireWorkspaceRoleWhenScoped('admin'))
     .input(
       z.object({
-        id: z.string(),
+        id: ModelProviderSchema,
         value: UpdateAiProviderConfigSchema,
       }),
     )
@@ -315,7 +316,7 @@ export const aiProviderRouter = router({
       z.object({
         sortMap: z.array(
           z.object({
-            id: z.string(),
+            id: ModelProviderSchema,
             sort: z.number(),
           }),
         ),

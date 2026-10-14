@@ -45,7 +45,6 @@ import { botMessageRouter } from './botMessage';
 import { briefRouter } from './brief';
 import { changelogRouter } from './changelog';
 import { chunkRouter } from './chunk';
-import { comfyuiRouter } from './comfyui';
 import { composioRouter } from './composio';
 import { configRouter } from './config';
 import { connectorRouter } from './connector';
@@ -77,7 +76,6 @@ import { metricRouter } from './metric';
 import { notebookRouter } from './notebook';
 import { notificationRouter } from './notification';
 import { oauthAppRouter } from './oauthApp';
-import { oauthDeviceFlowRouter } from './oauthDeviceFlow';
 import { pluginRouter } from './plugin';
 import { projectRouter } from './project';
 import { projectWorkingDirectoryRouter } from './projectWorkingDirectory';
@@ -137,7 +135,6 @@ export const lambdaRouter = router({
   apiKey: apiKeyRouter,
   asr: asrRouter,
   chunk: chunkRouter,
-  comfyui: comfyuiRouter,
   config: configRouter,
   connector: connectorRouter,
   dashboard: dashboardRouter,
@@ -171,7 +168,6 @@ export const lambdaRouter = router({
   notebook: notebookRouter,
   notification: notificationRouter,
   oauthApp: oauthAppRouter,
-  oauthDeviceFlow: oauthDeviceFlowRouter,
   plugin: pluginRouter,
   project: projectRouter,
   projectWorkingDirectory: projectWorkingDirectoryRouter,

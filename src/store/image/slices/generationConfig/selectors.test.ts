@@ -122,9 +122,8 @@ describe('imageGenerationConfigSelectors', () => {
 
   describe('parametersSchema', () => {
     it('should return the current parametersSchema', () => {
-      const state = merge(initialStore, { parametersSchema: testModelSchema });
+      const state = { ...initialStore, parametersSchema: testModelSchema };
       const result = imageGenerationConfigSelectors.parametersSchema(state);
-      // merge does deep merge, so result contains both default and test values
       expect(result.prompt).toEqual(testModelSchema.prompt);
       expect(result.size).toEqual(testModelSchema.size);
       expect(result.imageUrls).toEqual(testModelSchema.imageUrls);

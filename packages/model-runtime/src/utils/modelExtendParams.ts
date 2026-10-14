@@ -2,7 +2,7 @@ import type { LobeAgentChatConfig } from '@lobechat/types';
 import type { AiModelReasoningConfig, ExtendParamsType } from 'model-bank/aiModel';
 import { MODEL_REASONING_EXTEND_PARAMS } from 'model-bank/aiModel';
 
-import { isAdaptiveThinkingDefaultOnModel } from '../providers/anthropic/modelId';
+import { isAdaptiveThinkingDefaultOnModel } from '../core/anthropicCompatibleFactory/modelId';
 
 export interface ResolveEffectiveReasoningChatConfigContext {
   /**

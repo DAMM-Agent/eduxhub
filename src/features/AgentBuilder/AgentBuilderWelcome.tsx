@@ -9,7 +9,7 @@ import { DEFAULT_INBOX_AVATAR } from '@/const/index';
 import { conversationSelectors, useConversationStore } from '@/features/Conversation';
 import { type SuggestMode } from '@/features/SuggestQuestions';
 import { useAgentStore } from '@/store/agent';
-import { agentByIdSelectors } from '@/store/agent/selectors';
+import { agentSelectors } from '@/store/agent/selectors';
 
 import SuggestionChips from './SuggestionChips';
 
@@ -22,7 +22,7 @@ const AgentBuilderWelcome = memo<AgentBuilderWelcomeProps>(
   ({ disabled, mode = 'agentBuilder' }) => {
     const { t } = useTranslation('chat');
     const agentId = useConversationStore(conversationSelectors.agentId);
-    const agent = useAgentStore(agentByIdSelectors.getAgentConfigById(agentId));
+    const avatar = useAgentStore(agentSelectors.getAgentStoredAvatarById(agentId));
 
     return (
       <>
@@ -34,7 +34,7 @@ const AgentBuilderWelcome = memo<AgentBuilderWelcomeProps>(
             paddingBottom: 16,
           }}
         >
-          <Avatar avatar={agent.avatar || DEFAULT_INBOX_AVATAR} shape={'square'} size={78} />
+          <Avatar avatar={avatar || DEFAULT_INBOX_AVATAR} shape={'square'} size={78} />
           <Text fontSize={24} weight={'bold'}>
             {t('agentBuilder.title')}
           </Text>

@@ -15,21 +15,21 @@ describe('chat helper', () => {
     useAiInfraStore.setState({ enabledAiModels: [] });
   });
 
-  it('should resolve LobeHub routed model abilities by model id fallback', () => {
+  it('does not restore removed provider abilities from another provider', () => {
     useAiInfraStore.setState({
       enabledAiModels: [
         {
           abilities: { audio: true, video: true, vision: true },
           id: 'gemini-3.1-flash-lite-preview',
-          providerId: ModelProvider.Google,
+          providerId: 'google',
           type: 'chat',
         } as EnabledAiModel,
       ],
     });
 
-    expect(isCanUseVision('gemini-3.1-flash-lite-preview', ModelProvider.LobeHub)).toBe(true);
-    expect(isCanUseVideo('gemini-3.1-flash-lite-preview', ModelProvider.LobeHub)).toBe(true);
-    expect(isCanUseAudio('gemini-3.1-flash-lite-preview', ModelProvider.LobeHub)).toBe(true);
+    expect(isCanUseVision('gemini-3.1-flash-lite-preview', 'lobehub')).toBe(false);
+    expect(isCanUseVideo('gemini-3.1-flash-lite-preview', 'lobehub')).toBe(false);
+    expect(isCanUseAudio('gemini-3.1-flash-lite-preview', 'lobehub')).toBe(false);
   });
 
   it('should not fallback across non-LobeHub providers', () => {
@@ -38,7 +38,7 @@ describe('chat helper', () => {
         {
           abilities: { audio: true, video: true, vision: true },
           id: 'gemini-3.1-flash-lite-preview',
-          providerId: ModelProvider.Google,
+          providerId: 'google',
           type: 'chat',
         } as EnabledAiModel,
       ],
@@ -64,21 +64,21 @@ describe('chat helper', () => {
     expect(getRuntimeModelKnowledgeCutoff('gpt-4o', ModelProvider.OpenAI)).toBe('2023-10');
   });
 
-  it('should resolve LobeHub routed model knowledge cutoff by model id fallback', () => {
+  it('does not restore removed provider metadata from another provider', () => {
     useAiInfraStore.setState({
       enabledAiModels: [
         {
           id: 'gemini-3.1-flash-lite-preview',
           knowledgeCutoff: '2025-01',
-          providerId: ModelProvider.Google,
+          providerId: 'google',
           type: 'chat',
         } as EnabledAiModel,
       ],
     });
 
     expect(
-      getRuntimeModelKnowledgeCutoff('gemini-3.1-flash-lite-preview', ModelProvider.LobeHub),
-    ).toBe('2025-01');
+      getRuntimeModelKnowledgeCutoff('gemini-3.1-flash-lite-preview', 'lobehub'),
+    ).toBeUndefined();
   });
 
   it('should not fallback model knowledge cutoff across non-LobeHub providers', () => {
@@ -87,7 +87,7 @@ describe('chat helper', () => {
         {
           id: 'gemini-3.1-flash-lite-preview',
           knowledgeCutoff: '2025-01',
-          providerId: ModelProvider.Google,
+          providerId: 'google',
           type: 'chat',
         } as EnabledAiModel,
       ],

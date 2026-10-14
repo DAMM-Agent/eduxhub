@@ -4,11 +4,11 @@ import {
   type ModelParamsSchema,
   type RuntimeImageGenParams,
 } from 'model-bank';
-import { fluxSchnellParamsSchema } from 'model-bank';
 import { describe, expect, it, vi } from 'vitest';
 
 import { useImageStore } from '@/store/image';
 
+import { pixelModelSchema } from './fixtures.test-utils';
 import { useGenerationConfigParam } from './hooks';
 
 // Mock external dependencies
@@ -16,14 +16,14 @@ vi.mock('@/store/aiInfra', () => ({
   aiProviderSelectors: {
     enabledImageModelList: vi.fn(() => [
       {
-        id: 'fal',
-        name: 'Fal',
+        id: 'openai',
+        name: 'OpenAI',
         children: [
           {
-            id: 'flux/schnell',
-            displayName: 'FLUX.1 Schnell',
+            id: 'test-pixel-model',
+            displayName: 'Pixel Test Model',
             type: 'image',
-            parameters: fluxSchnellParamsSchema,
+            parameters: pixelModelSchema,
             releasedAt: '2024-08-01',
           } as AIImageModelCard,
         ],
@@ -206,10 +206,10 @@ describe('useGenerationConfigParam', () => {
     });
   });
 
-  describe('flux/schnell real-world parameters', () => {
-    it('should work with actual flux/schnell parameters', () => {
+  describe('test-pixel-model real-world parameters', () => {
+    it('should work with actual test-pixel-model parameters', () => {
       useImageStore.setState({
-        parametersSchema: fluxSchnellParamsSchema,
+        parametersSchema: pixelModelSchema,
         parameters: {
           prompt: 'A beautiful landscape',
           width: 1024,
@@ -241,9 +241,9 @@ describe('useGenerationConfigParam', () => {
       expect(seedResult.current.value).toBeNull();
     });
 
-    it('should update flux/schnell parameters correctly', () => {
+    it('should update test-pixel-model parameters correctly', () => {
       useImageStore.setState({
-        parametersSchema: fluxSchnellParamsSchema,
+        parametersSchema: pixelModelSchema,
         parameters: {
           prompt: 'original prompt',
           width: 512,

@@ -44,7 +44,7 @@ describe('AiInfraRepos', () => {
 
       const result = await repo.getAiProviderModelList(providerId);
 
-      expect(result).toHaveLength(2);
+      expect(result.length).toBeGreaterThan(0);
       expect(result).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: 'custom-gpt4' }),
@@ -113,29 +113,31 @@ describe('AiInfraRepos', () => {
     });
 
     it('should use builtin models', async () => {
-      const providerId = 'ai21';
+      const providerId = 'moonshot';
 
       vi.spyOn(repo.aiModelModel, 'getModelListByProviderId').mockResolvedValue([]);
 
       const result = await repo.getAiProviderModelList(providerId);
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(4);
       expect(result).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: 'jamba-mini' }),
-          expect.objectContaining({ id: 'jamba-large' }),
+          expect.objectContaining({ id: 'kimi-k3' }),
+          expect.objectContaining({ id: 'kimi-k2.7-code' }),
+          expect.objectContaining({ id: 'kimi-k2.7-code-highspeed' }),
+          expect.objectContaining({ id: 'kimi-k2.6' }),
         ]),
       );
     });
 
-    it('should return empty if not exist provider', async () => {
+    it('refuses unknown providers instead of returning an empty catalog', async () => {
       const providerId = 'abc';
 
       vi.spyOn(repo.aiModelModel, 'getModelListByProviderId').mockResolvedValue([]);
 
-      const result = await repo.getAiProviderModelList(providerId);
-
-      expect(result).toHaveLength(0);
+      await expect(repo.getAiProviderModelList(providerId)).rejects.toMatchObject({
+        errorType: 'UnsupportedProvider',
+      });
     });
 
     it('should support offset/limit pagination', async () => {

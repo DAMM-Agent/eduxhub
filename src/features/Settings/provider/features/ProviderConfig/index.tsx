@@ -1,9 +1,8 @@
 'use client';
 
-import { BRANDING_PROVIDER } from '@lobechat/business-const';
 import { AES_GCM_URL, BASE_PROVIDER_DOC_URL, FORM_STYLE } from '@lobechat/const';
 import { Center, Flexbox, Icon, stopPropagation, Tooltip } from '@lobehub/ui';
-import { Avatar, Skeleton, Spin, Switch } from '@lobehub/ui/base-ui';
+import { Skeleton, Spin, Switch } from '@lobehub/ui/base-ui';
 import {
   Form,
   type FormFieldProps,
@@ -23,26 +22,20 @@ import { Trans, useTranslation } from 'react-i18next';
 import urlJoin from 'url-join';
 
 import { FormInput, FormPassword } from '@/components/FormInput';
-import { ProviderCombine, ProviderIcon } from '@/components/LobeIcons';
+import { ProviderCombine } from '@/components/LobeIcons';
 import { SkeletonInput, SkeletonSwitch } from '@/components/Skeleton';
 import { usePermission } from '@/hooks/usePermission';
-import { lambdaQuery } from '@/libs/trpc/client';
 import { aiProviderSelectors, useAiInfraStore } from '@/store/aiInfra';
-import { serverConfigSelectors, useServerConfigStore } from '@/store/serverConfig';
 import {
   type AiProviderDetailItem,
   type AiProviderSourceType,
   type UpdateAiProviderConfigParams,
 } from '@/types/aiProvider';
-import { AiProviderSourceEnum } from '@/types/aiProvider';
 
 import { KeyVaultsConfigKey, LLMProviderApiTokenKey, LLMProviderBaseUrlKey } from '../../const';
-import { isResponsesApiSupportedSdkType } from '../providerSettings';
 import { type CheckErrorRender } from './Checker';
 import Checker from './Checker';
 import EnableSwitch from './EnableSwitch';
-import OAuthDeviceFlowAuth from './OAuthDeviceFlowAuth';
-import UpdateProviderInfo from './UpdateProviderInfo';
 
 const styles = createStaticStyles(({ css, cssVar }) => ({
   aceGcm: css`
@@ -115,20 +108,17 @@ const ProviderConfig = memo<ProviderConfigProps>(
     id,
     settings,
     checkModel,
-    logo,
     className,
     checkErrorRender,
     canDeactivate = true,
     name,
     showAceGcm = true,
     extra,
-    source = AiProviderSourceEnum.Builtin,
     apiKeyUrl,
     title,
     normalizeConfigValues,
   }) => {
     const {
-      authType,
       proxyUrl,
       showApiKey = true,
       defaultShowBrowserRequest,
@@ -141,15 +131,6 @@ const ProviderConfig = memo<ProviderConfigProps>(
       onValuesChange: (_, values) => handleFormValuesChange(values),
     });
     const { allowed: canManageProvider } = usePermission('manage_provider_key');
-
-    const isOAuthProvider = authType === 'oauthDeviceFlow';
-
-    // Query OAuth authentication status (only for OAuth providers)
-    const { data: oauthStatus } = lambdaQuery.oauthDeviceFlow.getAuthStatus.useQuery(
-      { providerId: id },
-      { enabled: isOAuthProvider, refetchOnWindowFocus: true },
-    );
-    const isOAuthAuthenticated = oauthStatus?.status === 'ACTIVE';
 
     const [
       data,
@@ -166,9 +147,6 @@ const ProviderConfig = memo<ProviderConfigProps>(
       aiProviderSelectors.isProviderConfigUpdating(id)(s),
       aiProviderSelectors.providerConfigById(id)(s),
     ]);
-    const enableBusinessFeatures = useServerConfigStore(
-      serverConfigSelectors.enableBusinessFeatures,
-    );
 
     // Watch form values in real-time to show/hide switches immediately
     // Watch nested form values for endpoints
@@ -252,54 +230,43 @@ const ProviderConfig = memo<ProviderConfigProps>(
     const { cancel: cancelDebouncedHandleValueChange, run: debouncedHandleValueChange } =
       useDebounceFn(handleValueChange, { wait: 500 });
 
-    const isCustom = source === AiProviderSourceEnum.Custom;
-
-    // OAuth auth change handler
-    const handleOAuthChange = useCallback(async () => {
-      // Only refresh provider data, don't update with form values
-      // OAuth tokens are saved directly to DB by the tRPC endpoint
-      await useAiInfraStore.getState().refreshAiProviderDetail();
-      await useAiInfraStore.getState().refreshAiProviderRuntimeState();
-    }, []);
-
-    const apiKeyItem: FormFieldProps[] =
-      !showApiKey || isOAuthProvider
-        ? []
-        : (apiKeyItems ?? [
-            {
-              children: isLoading ? (
-                <SkeletonInput />
-              ) : (
-                <FormPassword
-                  autoComplete={'new-password'}
-                  disabled={!canManageProvider}
-                  placeholder={t('providerModels.config.apiKey.placeholder', { name })}
-                  suffix={
-                    configUpdating && (
-                      <Spin size="small" style={{ color: cssVar.colorTextTertiary }} />
-                    )
-                  }
-                />
-              ),
-              desc: apiKeyUrl ? (
-                <Trans
-                  i18nKey="providerModels.config.apiKey.descWithUrl"
-                  ns={'modelProvider'}
-                  values={{ name }}
-                  components={[
-                    <span key="0" />,
-                    <span key="1" />,
-                    <span key="2" />,
-                    <a href={apiKeyUrl} key="3" rel="noreferrer" target="_blank" />,
-                  ]}
-                />
-              ) : (
-                t(`providerModels.config.apiKey.desc`, { name })
-              ),
-              label: t(`providerModels.config.apiKey.title`),
-              name: `${KeyVaultsConfigKey}.${LLMProviderApiTokenKey}`,
-            },
-          ]);
+    const apiKeyItem: FormFieldProps[] = !showApiKey
+      ? []
+      : (apiKeyItems ?? [
+          {
+            children: isLoading ? (
+              <SkeletonInput />
+            ) : (
+              <FormPassword
+                autoComplete={'new-password'}
+                disabled={!canManageProvider}
+                placeholder={t('providerModels.config.apiKey.placeholder', { name })}
+                suffix={
+                  configUpdating && (
+                    <Spin size="small" style={{ color: cssVar.colorTextTertiary }} />
+                  )
+                }
+              />
+            ),
+            desc: apiKeyUrl ? (
+              <Trans
+                i18nKey="providerModels.config.apiKey.descWithUrl"
+                ns={'modelProvider'}
+                values={{ name }}
+                components={[
+                  <span key="0" />,
+                  <span key="1" />,
+                  <span key="2" />,
+                  <a href={apiKeyUrl} key="3" rel="noreferrer" target="_blank" />,
+                ]}
+              />
+            ) : (
+              t(`providerModels.config.apiKey.desc`, { name })
+            ),
+            label: t(`providerModels.config.apiKey.title`),
+            name: `${KeyVaultsConfigKey}.${LLMProviderApiTokenKey}`,
+          },
+        ]);
 
     const aceGcmItem: FormFieldProps = {
       bare: true,
@@ -324,7 +291,7 @@ const ProviderConfig = memo<ProviderConfigProps>(
       ),
     };
 
-    const showEndpoint = !!proxyUrl || isCustom;
+    const showEndpoint = !!proxyUrl;
 
     const endpointItem: FormFieldProps | undefined = showEndpoint
       ? {
@@ -380,8 +347,7 @@ const ProviderConfig = memo<ProviderConfigProps>(
         }
       : undefined;
 
-    const showResponsesApiSwitch =
-      !!supportResponsesApi || (isCustom && isResponsesApiSupportedSdkType(settings?.sdkType));
+    const showResponsesApiSwitch = !!supportResponsesApi;
 
     const configItems = [
       ...apiKeyItem,
@@ -452,88 +418,42 @@ const ProviderConfig = memo<ProviderConfigProps>(
       debouncedHandleValueChange(id, normalizeValues(pickFieldValues(values)));
     };
 
-    const logoUrl = data?.logo ?? logo;
-
-    // Header components - shared between OAuth card and Form
     const headerTitle = (
       <Flexbox
         horizontal
-        align={'center'}
+        align="center"
         gap={4}
-        style={{
-          height: 24,
-          maxHeight: 24,
-          // OAuth providers keep full-colour branding while off: the enable
-          // switch sits right beside them, so dimming only adds noise
-          ...(enabled || isOAuthProvider
-            ? {}
-            : { filter: 'grayscale(100%)', maxHeight: 24, opacity: 0.66 }),
-        }}
+        style={{ height: 24, ...(enabled ? {} : { filter: 'grayscale(100%)', opacity: 0.66 }) }}
       >
-        {isCustom ? (
-          <Flexbox horizontal align={'center'} gap={8}>
-            {logoUrl ? (
-              <Avatar avatar={logoUrl} shape={'circle'} size={32} title={name || id} />
-            ) : (
-              <ProviderCombine provider={'not-exist-provider'} size={24} />
-            )}
-            {name}
-          </Flexbox>
-        ) : (
-          <>
-            {title ??
-              // OAuth providers sell a subscription plan rather than the vendor
-              // platform, so the plan name reads truer than the vendor wordmark
-              // the combined logo would render (e.g. ChatGPT vs. OpenAI).
-              (isOAuthProvider ? (
-                <Flexbox horizontal align={'center'} gap={8}>
-                  <ProviderIcon
-                    provider={id}
-                    shape={'square'}
-                    size={24}
-                    style={{ borderRadius: 6 }}
-                    type={'avatar'}
-                  />
-                  {name}
-                </Flexbox>
-              ) : (
-                <ProviderCombine provider={id} size={24} />
-              ))}
-            <Tooltip title={t('providerModels.config.helpDoc')}>
-              <a
-                href={urlJoin(BASE_PROVIDER_DOC_URL, id)}
-                rel="noreferrer"
-                target="_blank"
-                onClick={stopPropagation}
-              >
-                <Center className={styles.help} height={20} width={20}>
-                  ?
-                </Center>
-              </a>
-            </Tooltip>
-          </>
-        )}
+        {title ?? <ProviderCombine provider={id} size={24} />}
+        <Tooltip title={t('providerModels.config.helpDoc')}>
+          <a
+            href={urlJoin(BASE_PROVIDER_DOC_URL, id)}
+            rel="noreferrer"
+            target="_blank"
+            onClick={stopPropagation}
+          >
+            <Center className={styles.help} height={20} width={20}>
+              ?
+            </Center>
+          </a>
+        </Tooltip>
       </Flexbox>
     );
 
     const headerExtra = (
-      <Flexbox horizontal align={'center'} gap={8}>
+      <Flexbox horizontal align="center" gap={8}>
         {extra}
-        {isCustom && <UpdateProviderInfo />}
-        {canDeactivate && !(enableBusinessFeatures && id === BRANDING_PROVIDER) && (
+        {canDeactivate && (
           <>
-            {/* OAuth providers pair the switch with a connect action, so the
-                built-in notice would crowd the row */}
-            {!isCustom && !isOAuthProvider && (
-              <Tooltip title={t('providerModels.config.builtinNotice')}>
-                <Icon
-                  color={cssVar.colorTextTertiary}
-                  icon={InfoIcon}
-                  size={16}
-                  onClick={stopPropagation}
-                />
-              </Tooltip>
-            )}
+            <Tooltip title={t('providerModels.config.builtinNotice')}>
+              <Icon
+                color={cssVar.colorTextTertiary}
+                icon={InfoIcon}
+                size={16}
+                onClick={stopPropagation}
+              />
+            </Tooltip>
             <EnableSwitch id={id} key={id} />
           </>
         )}
@@ -543,36 +463,18 @@ const ProviderConfig = memo<ProviderConfigProps>(
     const model: FormGroupItem = {
       children: configItems,
       defaultActive: true,
-      extra: isOAuthProvider ? undefined : headerExtra,
-      title: isOAuthProvider ? '' : headerTitle,
+      extra: headerExtra,
+      title: headerTitle,
     };
 
-    // For OAuth providers, only show Form when authenticated
-    const shouldShowForm = !isOAuthProvider || isOAuthAuthenticated;
-
     return (
-      <>
-        {isOAuthProvider && (
-          <OAuthDeviceFlowAuth
-            // when the provider cannot be deactivated there is no switch to
-            // gate on, so the connect action stays available
-            enabled={!canDeactivate || enabled}
-            extra={headerExtra}
-            providerId={id}
-            title={headerTitle}
-            onAuthChange={handleOAuthChange}
-          />
-        )}
-        {shouldShowForm && (
-          <Form
-            className={cx(styles.form, className)}
-            form={form}
-            items={[model]}
-            variant={'borderless'}
-            {...FORM_STYLE}
-          />
-        )}
-      </>
+      <Form
+        className={cx(styles.form, className)}
+        form={form}
+        items={[model]}
+        variant="borderless"
+        {...FORM_STYLE}
+      />
     );
   },
 );

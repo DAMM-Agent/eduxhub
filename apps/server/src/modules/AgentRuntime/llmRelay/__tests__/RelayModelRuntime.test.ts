@@ -73,9 +73,9 @@ const createRuntime = (
     deadlines,
     operationId: 'op_1',
     preferredClientId: 'tab-a',
-    provider: 'ollama',
+    provider: 'openai',
     redis: redis as any,
-    runtimeProvider: 'ollama',
+    runtimeProvider: 'openai',
     stepIndex: 0,
     streamManager,
     userId: USER_ID,
@@ -118,8 +118,8 @@ describe('RelayModelRuntime + llm-relay handlers', () => {
       model: 'llama3',
       operationId: 'op_1',
       preferredClientId: 'tab-a',
-      provider: 'ollama',
-      runtimeProvider: 'ollama',
+      provider: 'openai',
+      runtimeProvider: 'openai',
     });
     // The event carries no messages; the device fetches the body with its lease.
     expect(JSON.stringify(execute)).not.toContain('Say hello');
@@ -219,7 +219,7 @@ describe('RelayModelRuntime + llm-relay handlers', () => {
       .then((response) => consumeStreamUntilDone(response));
     const { leaseToken } = await waitForExecute(events);
 
-    const error = { errorType: 'OllamaServiceUnavailable', message: 'connect ECONNREFUSED' };
+    const error = { errorType: 'ServiceUnavailable', message: 'connect ECONNREFUSED' };
     await post(leaseToken, {
       chunks: [],
       clientId: 'tab-a',
@@ -243,7 +243,7 @@ describe('RelayModelRuntime + llm-relay handlers', () => {
     await expect(consumeStreamUntilDone(response)).rejects.toMatchObject({
       error: { reason: 'claim_timeout', recoverable: true },
       errorType: AgentRuntimeErrorType.ClientLlmExecutorUnavailable,
-      provider: 'ollama',
+      provider: 'openai',
     });
     const cancel = events.find((e) => e.type === 'llm_cancel')?.data as LlmCancelData;
     expect(cancel).toEqual({ callId: CALL_ID, reason: 'timeout' });
@@ -414,7 +414,7 @@ describe('RelayModelRuntime non-chat methods', () => {
 
     const result = runtime.generateObject({ messages: [], model: 'llama3' } as any);
     const { leaseToken } = await waitForExecute(events);
-    const providerError = { errorType: 'OllamaServiceUnavailable', provider: 'ollama' };
+    const providerError = { errorType: 'ServiceUnavailable', provider: 'openai' };
     await post(leaseToken, {
       chunks: [],
       clientId: 'tab-a',

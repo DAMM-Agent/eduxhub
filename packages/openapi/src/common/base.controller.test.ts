@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { Hono } from 'hono';
+import { UnsupportedModelProviderError } from 'model-bank/modelProvider';
 import { describe, expect, it, vi } from 'vitest';
 
 import { BaseController } from './base.controller';
@@ -23,6 +24,20 @@ const requestError = async (name: string) => {
 };
 
 describe('BaseController.handleError', () => {
+  it('maps unsupported-provider errors to HTTP 400 with a stable reason', async () => {
+    const app = new Hono();
+    app.get('/', (c) =>
+      new TestController().respond(c, new UnsupportedModelProviderError('google')),
+    );
+    const response = await app.request('/');
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      error: expect.stringContaining('UnsupportedProvider'),
+      success: false,
+    });
+  });
+
   it.each([
     ['BusinessError', 400],
     ['ValidationError', 400],

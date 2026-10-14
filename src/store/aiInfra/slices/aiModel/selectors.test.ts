@@ -1,8 +1,10 @@
+import type { AiProviderModelListItem } from 'model-bank';
 import { AiModelSourceEnum } from 'model-bank';
 import { describe, expect, it } from 'vitest';
 
 import { createReplicaState } from '@/libs/replica';
 import { type AIProviderStoreState } from '@/store/aiInfra/initialState';
+import { initialState } from '@/store/aiInfra/initialState';
 
 import { aiModelSelectors } from './selectors';
 
@@ -33,13 +35,14 @@ describe('aiModelSelectors', () => {
       source: AiModelSourceEnum.Remote,
       displayName: 'Remote Model',
     },
-  ];
+  ] satisfies AiProviderModelListItem[];
 
   const mockState: AIProviderStoreState = {
+    ...initialState,
     // The model list is a replica keyed by provider; the selectors read the
     // active provider's entry.
-    activeAiProvider: 'provider1',
-    aiModelListMap: { provider1: models },
+    activeAiProvider: 'openai',
+    aiModelListMap: { openai: models },
     aiModelListReplica: createReplicaState(),
     builtinAiModelList: [],
     modelSearchKeyword: '',
@@ -47,7 +50,7 @@ describe('aiModelSelectors', () => {
     enabledAiModels: [
       {
         id: 'model1',
-        providerId: 'provider1',
+        providerId: 'openai',
         abilities: {
           functionCall: true,
           vision: true,
@@ -62,7 +65,7 @@ describe('aiModelSelectors', () => {
       },
       {
         id: 'model4',
-        providerId: 'provider2',
+        providerId: 'moonshot',
         abilities: {
           functionCall: false,
           vision: false,
@@ -159,9 +162,7 @@ describe('aiModelSelectors', () => {
       const state = {
         ...mockState,
         aiModelListMap: {
-          provider1: models.filter(
-            (m) => !('source' in m) || m.source !== AiModelSourceEnum.Remote,
-          ),
+          openai: models.filter((m) => !('source' in m) || m.source !== AiModelSourceEnum.Remote),
         },
       };
       const result = aiModelSelectors.hasRemoteModels(state);
@@ -208,32 +209,28 @@ describe('aiModelSelectors', () => {
 
   describe('model capability checks', () => {
     it('should check tool use support', () => {
-      expect(aiModelSelectors.isModelSupportToolUse('model1', 'provider1')(mockState)).toBe(true);
-      expect(aiModelSelectors.isModelSupportToolUse('model4', 'provider2')(mockState)).toBe(false);
+      expect(aiModelSelectors.isModelSupportToolUse('model1', 'openai')(mockState)).toBe(true);
+      expect(aiModelSelectors.isModelSupportToolUse('model4', 'moonshot')(mockState)).toBe(false);
     });
 
     it('should check vision support', () => {
-      expect(aiModelSelectors.isModelSupportVision('model1', 'provider1')(mockState)).toBe(true);
-      expect(aiModelSelectors.isModelSupportVision('model4', 'provider2')(mockState)).toBe(false);
+      expect(aiModelSelectors.isModelSupportVision('model1', 'openai')(mockState)).toBe(true);
+      expect(aiModelSelectors.isModelSupportVision('model4', 'moonshot')(mockState)).toBe(false);
     });
 
     it('should check reasoning support', () => {
-      expect(aiModelSelectors.isModelSupportReasoning('model1', 'provider1')(mockState)).toBe(true);
-      expect(aiModelSelectors.isModelSupportReasoning('model4', 'provider2')(mockState)).toBe(
-        false,
-      );
+      expect(aiModelSelectors.isModelSupportReasoning('model1', 'openai')(mockState)).toBe(true);
+      expect(aiModelSelectors.isModelSupportReasoning('model4', 'moonshot')(mockState)).toBe(false);
     });
 
     it('should check image output support', () => {
-      expect(aiModelSelectors.isModelSupportImageOutput('model1', 'provider1')(mockState)).toBe(
-        true,
-      );
+      expect(aiModelSelectors.isModelSupportImageOutput('model1', 'openai')(mockState)).toBe(true);
       // Missing ability defaults to false via `|| false` coercion.
-      expect(aiModelSelectors.isModelSupportImageOutput('model4', 'provider2')(mockState)).toBe(
+      expect(aiModelSelectors.isModelSupportImageOutput('model4', 'moonshot')(mockState)).toBe(
         false,
       );
       // Unknown model returns false instead of throwing.
-      expect(aiModelSelectors.isModelSupportImageOutput('missing', 'provider1')(mockState)).toBe(
+      expect(aiModelSelectors.isModelSupportImageOutput('missing', 'openai')(mockState)).toBe(
         false,
       );
     });
@@ -241,53 +238,70 @@ describe('aiModelSelectors', () => {
 
   describe('context window checks', () => {
     it('should check if model has context window tokens', () => {
-      expect(aiModelSelectors.isModelHasContextWindowToken('model1', 'provider1')(mockState)).toBe(
+      expect(aiModelSelectors.isModelHasContextWindowToken('model1', 'openai')(mockState)).toBe(
         true,
       );
-      expect(aiModelSelectors.isModelHasContextWindowToken('model4', 'provider2')(mockState)).toBe(
+      expect(aiModelSelectors.isModelHasContextWindowToken('model4', 'moonshot')(mockState)).toBe(
         false,
       );
     });
 
     it('should get model context window tokens', () => {
-      expect(aiModelSelectors.modelContextWindowTokens('model1', 'provider1')(mockState)).toBe(
-        4000,
-      );
+      expect(aiModelSelectors.modelContextWindowTokens('model1', 'openai')(mockState)).toBe(4000);
       expect(
-        aiModelSelectors.modelContextWindowTokens('model4', 'provider2')(mockState),
+        aiModelSelectors.modelContextWindowTokens('model4', 'moonshot')(mockState),
       ).toBeUndefined();
     });
   });
 
   describe('modelDisabledParams', () => {
     it('should return disabledParams when declared on the model card', () => {
-      expect(aiModelSelectors.modelDisabledParams('model1', 'provider1')(mockState)).toEqual([
+      expect(aiModelSelectors.modelDisabledParams('model1', 'openai')(mockState)).toEqual([
         'temperature',
         'top_p',
       ]);
     });
 
     it('should return undefined when the model has no settings', () => {
-      expect(
-        aiModelSelectors.modelDisabledParams('model4', 'provider2')(mockState),
-      ).toBeUndefined();
+      expect(aiModelSelectors.modelDisabledParams('model4', 'moonshot')(mockState)).toBeUndefined();
     });
 
     it('should return undefined for an unknown model', () => {
-      expect(
-        aiModelSelectors.modelDisabledParams('missing', 'provider1')(mockState),
-      ).toBeUndefined();
+      expect(aiModelSelectors.modelDisabledParams('missing', 'openai')(mockState)).toBeUndefined();
     });
   });
 
   describe('getModelCard', () => {
+    it.each(['anthropic', 'ollama', 'custom-provider'])(
+      'ignores legacy caches for %s',
+      (provider) => {
+        const legacyModel = { ...mockState.enabledAiModels![0], providerId: provider };
+        const state: AIProviderStoreState = {
+          ...mockState,
+          activeAiProvider: provider,
+          aiModelListMap: { [provider]: models },
+          builtinAiModelList: [legacyModel],
+          enabledAiModels: [legacyModel],
+        };
+
+        expect(aiModelSelectors.getAiProviderModelList(provider)(state)).toEqual([]);
+        expect(aiModelSelectors.totalAiProviderModelList(state)).toBe(0);
+        expect(
+          aiModelSelectors.getEnabledModelById(legacyModel.id, provider)(state),
+        ).toBeUndefined();
+        expect(aiModelSelectors.getEnabledModelById(legacyModel.id, '')(state)).toBeUndefined();
+        expect(aiModelSelectors.getModelCard(legacyModel.id, provider)(state)).toBeUndefined();
+        expect(aiModelSelectors.isModelSupportToolUse(legacyModel.id, provider)(state)).toBe(false);
+      },
+    );
+
     it('should find model in enabledAiModels first', () => {
       const state: AIProviderStoreState = {
         ...mockState,
         enabledAiModels: [
           {
             id: 'test-model',
-            providerId: 'provider-a',
+            providerId: 'minimax',
             displayName: 'Enabled Model A',
             abilities: {},
             type: 'chat',
@@ -299,14 +313,14 @@ describe('aiModelSelectors', () => {
         builtinAiModelList: [
           {
             id: 'test-model',
-            providerId: 'provider-a',
+            providerId: 'minimax',
             displayName: 'Builtin Model A',
             abilities: {},
             type: 'chat',
           },
         ],
       };
-      const result = aiModelSelectors.getModelCard('test-model', 'provider-a')(state);
+      const result = aiModelSelectors.getModelCard('test-model', 'minimax')(state);
       expect(result).toBeDefined();
       expect(result?.displayName).toBe('Enabled Model A');
       expect((result?.pricing?.units?.[0] as any)?.rate).toBe(1);
@@ -319,20 +333,20 @@ describe('aiModelSelectors', () => {
         builtinAiModelList: [
           {
             id: 'test-model',
-            providerId: 'provider-a',
+            providerId: 'minimax',
             displayName: 'Builtin Model A',
             abilities: {},
             type: 'chat',
           },
         ],
       };
-      const result = aiModelSelectors.getModelCard('test-model', 'provider-a')(state);
+      const result = aiModelSelectors.getModelCard('test-model', 'minimax')(state);
       expect(result).toBeDefined();
       expect(result?.displayName).toBe('Builtin Model A');
     });
 
     it('should return undefined if model is not found in either list', () => {
-      const result = aiModelSelectors.getModelCard('non-existent', 'provider-a')(mockState);
+      const result = aiModelSelectors.getModelCard('non-existent', 'minimax')(mockState);
       expect(result).toBeUndefined();
     });
   });

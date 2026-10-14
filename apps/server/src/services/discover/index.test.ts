@@ -42,10 +42,10 @@ vi.mock('model-bank', async (importOriginal) => {
         releasedAt: '2023-03-01T00:00:00Z',
       },
       {
-        id: 'claude-3-opus',
-        displayName: 'Claude 3 Opus',
-        description: 'Anthropic Claude 3 Opus model',
-        providerId: 'anthropic',
+        id: 'kimi-k2.6',
+        displayName: 'Kimi K2.6',
+        description: 'Moonshot model',
+        providerId: 'moonshot',
         contextWindowTokens: 200000,
         abilities: {
           vision: true,
@@ -61,7 +61,7 @@ vi.mock('model-bank', async (importOriginal) => {
         id: 'lobehub-onboarding-v1',
         displayName: 'LobeHub Onboarding',
         description: 'Runtime-only onboarding alias model',
-        providerId: 'lobehub',
+        providerId: 'qwen',
         contextWindowTokens: 1_000_000,
         abilities: {
           functionCall: true,
@@ -69,6 +69,13 @@ vi.mock('model-bank', async (importOriginal) => {
         },
         releasedAt: '2026-04-24T00:00:00Z',
         visible: false,
+      },
+      {
+        abilities: { vision: true },
+        displayName: 'Legacy Model',
+        id: 'legacy-model',
+        providerId: 'anthropic',
+        type: 'chat',
       },
     ],
   };
@@ -651,6 +658,28 @@ describe('DiscoverService', () => {
   });
 
   describe('Provider Market', () => {
+    it('lists exactly the seven retained providers before pagination', async () => {
+      const firstPage = await service.getProviderList({ page: 1, pageSize: 4 });
+      const secondPage = await service.getProviderList({ page: 2, pageSize: 4 });
+
+      expect(firstPage.totalCount).toBe(7);
+      expect(secondPage.totalCount).toBe(7);
+      expect(secondPage.items).toHaveLength(3);
+      expect(
+        [...firstPage.items, ...secondPage.items].map((item) => item.identifier).sort(),
+      ).toEqual(['deepseek', 'minimax', 'moonshot', 'openai', 'qwen', 'volcengine', 'zhipu']);
+      expect((await service.getProviderList({ q: 'anthropic' })).items).toEqual([]);
+    });
+
+    it.each(['anthropic', 'volcenginecodingplan', 'custom-provider'])(
+      'refuses removed provider detail %s',
+      async (identifier) => {
+        await expect(service.getProviderDetail({ identifier })).rejects.toMatchObject({
+          errorType: 'UnsupportedProvider',
+        });
+      },
+    );
+
     describe('getProviderList', () => {
       it('should return formatted provider list', async () => {
         const result = await service.getProviderList();
@@ -663,8 +692,8 @@ describe('DiscoverService', () => {
               modelCount: expect.any(Number),
             }),
             expect.objectContaining({
-              identifier: 'anthropic',
-              name: 'Anthropic',
+              identifier: 'minimax',
+              name: 'Minimax',
               modelCount: expect.any(Number),
             }),
           ]),
@@ -716,6 +745,13 @@ describe('DiscoverService', () => {
   });
 
   describe('Model Market', () => {
+    it('excludes removed providers even if an old catalog still supplies their models', async () => {
+      expect((await service.getModelList({ q: 'legacy-model' })).items).toEqual([]);
+      expect(await service.getModelDetail({ identifier: 'legacy-model' })).toBeUndefined();
+      const categories = await service.getModelCategories();
+      expect(categories.some((item) => item.category === 'anthropic')).toBe(false);
+    });
+
     describe('getModelList', () => {
       it('should return deduplicated model list', async () => {
         const result = await service.getModelList();
@@ -801,7 +837,7 @@ describe('DiscoverService', () => {
       it('should not include categories that only have hidden models', async () => {
         const result = await service.getModelCategories();
 
-        expect(result.some((item) => item.category === 'lobehub')).toBe(false);
+        expect(result.some((item) => item.category === 'qwen')).toBe(false);
       });
     });
   });

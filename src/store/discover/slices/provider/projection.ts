@@ -62,7 +62,7 @@ export const providerListResource = defineReplica<ProviderListParams, ProviderLi
   key: providerListQueryKey,
   name: 'providerList',
   storage: 'indexedDB',
-  version: 1,
+  version: 2,
 });
 
 /**
@@ -80,7 +80,7 @@ export const providerDetailResource = defineReplica<
   key: providerDetailQueryKey,
   name: 'providerDetail',
   storage: 'indexedDB',
-  version: 1,
+  version: 2,
 });
 
 /** The provider identifier index (`providerIdentifiersMap[queryKey]`). */
@@ -92,5 +92,5 @@ export const providerIdentifiersResource = defineReplica<
   key: providerIdentifiersQueryKey,
   name: 'providerIdentifiers',
   storage: 'localStorage',
-  version: 1,
+  version: 2,
 });

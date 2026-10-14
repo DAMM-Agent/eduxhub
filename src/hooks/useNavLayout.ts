@@ -48,6 +48,7 @@ export const useNavLayout = (): NavLayout => {
     () =>
       [
         {
+          hidden: true,
           icon: SearchIcon,
           key: 'search',
           onClick: () => toggleCommandMenu(true),
@@ -88,6 +89,7 @@ export const useNavLayout = (): NavLayout => {
     () =>
       [
         {
+          hidden: true,
           icon: getRouteById('image')!.icon,
           key: SidebarTabKey.Image,
           title: t('tab.generation'),
@@ -101,6 +103,7 @@ export const useNavLayout = (): NavLayout => {
           url: '/community',
         },
         {
+          hidden: true,
           icon: getRouteById('page')!.icon,
           key: SidebarTabKey.Pages,
           title: t('tab.pages'),

@@ -1,4 +1,3 @@
-import { ModelProvider } from 'model-bank';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 interface CapturedProviderConfig {
@@ -149,27 +148,17 @@ describe('getServerGlobalConfig', () => {
     vi.unstubAllEnvs();
   });
 
-  it('should only enable LobeHub by default in business feature mode', async () => {
-    const providerConfig = await loadCapturedProviderConfig(true);
-
-    expect(providerConfig[ModelProvider.LobeHub].enabled).toBe(true);
-    expect(providerConfig[ModelProvider.DeepSeek].enabled).toBe(false);
-    expect(providerConfig[ModelProvider.Ollama].fetchOnClient).toBe(true);
-
-    for (const provider of Object.values(ModelProvider)) {
-      if (provider === ModelProvider.LobeHub) continue;
-
-      expect(providerConfig[provider].enabled).toBe(false);
-    }
-  });
-
-  it('should keep upstream defaults outside business feature mode', async () => {
-    const providerConfig = await loadCapturedProviderConfig(false);
-
-    expect(providerConfig[ModelProvider.LobeHub]).toBeUndefined();
-    expect(providerConfig[ModelProvider.OpenAI]).toBeUndefined();
-    expect(providerConfig[ModelProvider.DeepSeek].enabled).toBe(true);
-  });
+  it.each([true, false])(
+    'keeps only retained provider overrides (business=%s)',
+    async (business) => {
+      const providerConfig = await loadCapturedProviderConfig(business);
+      expect(providerConfig).toEqual({
+        deepseek: { enabled: true },
+        qwen: { withDeploymentName: true },
+        volcengine: { withDeploymentName: true },
+      });
+    },
+  );
 
   it('should enable gateway mode for business builds', async () => {
     await expect(loadServerConfig(true)).resolves.toMatchObject({

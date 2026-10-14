@@ -34,7 +34,18 @@ describe('configRouter', () => {
           // Assert
           const result = response.serverConfig.aiProvider?.openai;
 
-          expect(result).toMatchSnapshot();
+          expect(result?.enabledModels).toEqual(['llama', 'claude-2', 'gpt-4-0125-preview']);
+          expect(
+            result?.serverModelLists?.map(({ id, displayName, enabled }) => ({
+              id,
+              displayName,
+              enabled,
+            })),
+          ).toEqual([
+            { displayName: 'llama', enabled: true, id: 'llama' },
+            { displayName: 'claude-2', enabled: true, id: 'claude-2' },
+            { displayName: 'gpt-4-32k', enabled: true, id: 'gpt-4-0125-preview' },
+          ]);
           process.env.OPENAI_MODEL_LIST = '';
         });
 
@@ -46,7 +57,15 @@ describe('configRouter', () => {
 
           const result = response.serverConfig.aiProvider?.openai?.serverModelLists;
 
-          expect(result).toMatchSnapshot();
+          expect(result?.map((model) => model.id)).toEqual([
+            'gpt-3.5-turbo-1106',
+            'gpt-3.5-turbo',
+            'gpt-4',
+            'gpt-4-32k',
+            'gpt-4-1106-preview',
+            'gpt-4-vision',
+          ]);
+          expect(result?.every((model) => model.enabled && model.type === 'chat')).toBe(true);
 
           process.env.OPENAI_MODEL_LIST = '';
         });
@@ -87,7 +106,7 @@ describe('configRouter', () => {
 
           const model = result?.find((o) => o.id === 'gpt-4-1106-preview');
 
-          expect(model).toMatchSnapshot();
+          expect(model).toMatchObject({ enabled: true, id: 'gpt-4-1106-preview', type: 'chat' });
 
           process.env.OPENAI_MODEL_LIST = '';
         });
@@ -132,20 +151,11 @@ describe('configRouter', () => {
         });
       });
 
-      describe('OPENROUTER_MODEL_LIST', () => {
-        it('custom deletion, addition, and renaming of models', async () => {
-          process.env.OPENROUTER_MODEL_LIST =
-            '-all,+meta-llama/llama-3.1-8b-instruct:free,+google/gemma-2-9b-it:free';
-
-          const response = await router.getGlobalConfig();
-
-          // Assert
-          const result = response.serverConfig.aiProvider?.openrouter;
-
-          expect(result).toMatchSnapshot();
-
-          process.env.OPENROUTER_MODEL_LIST = '';
-        });
+      it('ignores environment model lists for removed providers', async () => {
+        vi.stubEnv('OPENROUTER_MODEL_LIST', '+legacy-model');
+        const response = await router.getGlobalConfig();
+        expect(response.serverConfig.aiProvider).not.toHaveProperty('openrouter');
+        vi.unstubAllEnvs();
       });
 
       it('should enable the default DeepSeek provider without a server API key', async () => {

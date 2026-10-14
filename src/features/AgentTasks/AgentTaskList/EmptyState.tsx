@@ -1,19 +1,23 @@
 'use client';
 
-import { Flexbox, Icon } from '@lobehub/ui';
+import { Flexbox } from '@lobehub/ui';
 import { Text } from '@lobehub/ui/base-ui';
-import { createStaticStyles, cssVar, responsive } from 'antd-style';
-import { RefreshCw } from 'lucide-react';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+/* Task template recommendations are temporarily disabled on the task empty state.
+import { Icon } from '@lobehub/ui';
+import { createStaticStyles, cssVar, responsive } from 'antd-style';
+import { RefreshCw } from 'lucide-react';
 import { TaskTemplateCard } from '@/features/RecommendTaskTemplates/TaskTemplateCard';
 import { TaskTemplateCardSkeleton } from '@/features/RecommendTaskTemplates/TaskTemplateCardSkeleton';
 import { useDailyBriefRecommendationsUI } from '@/features/RecommendTaskTemplates/useDailyBriefRecommendationsUI';
+*/
 import WideScreenContainer from '@/features/WideScreenContainer';
 
 import CreateTaskInlineEntry from './CreateTaskInlineEntry';
 
+/*
 const EMPTY_STATE_RECOMMEND_COUNT = 10;
 
 const styles = createStaticStyles(({ css }) => ({
@@ -27,6 +31,7 @@ const styles = createStaticStyles(({ css }) => ({
     }
   `,
 }));
+*/
 
 interface EmptyStateProps {
   /** When set, scopes task creation to this agent and locks the assignee. */
@@ -36,8 +41,8 @@ interface EmptyStateProps {
 
 const EmptyState = memo<EmptyStateProps>(({ agentId, projectId }) => {
   const { t } = useTranslation('chat');
-  const { t: tCommon } = useTranslation('common');
-  const templatesState = useDailyBriefRecommendationsUI({ count: EMPTY_STATE_RECOMMEND_COUNT });
+  // const { t: tCommon } = useTranslation('common');
+  // const templatesState = useDailyBriefRecommendationsUI({ count: EMPTY_STATE_RECOMMEND_COUNT });
 
   return (
     <WideScreenContainer
@@ -60,6 +65,7 @@ const EmptyState = memo<EmptyStateProps>(({ agentId, projectId }) => {
         variant={'hero'}
       />
 
+      {/*
       {!projectId && templatesState.mode !== 'hidden' && (
         <Flexbox gap={12}>
           <Flexbox horizontal align={'center'} justify={'space-between'}>
@@ -98,6 +104,7 @@ const EmptyState = memo<EmptyStateProps>(({ agentId, projectId }) => {
           </div>
         </Flexbox>
       )}
+      */}
     </WideScreenContainer>
   );
 });

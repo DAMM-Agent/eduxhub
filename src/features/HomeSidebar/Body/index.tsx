@@ -1,9 +1,9 @@
 'use client';
 
 import type { MenuProps } from '@lobehub/ui';
-import { DropdownMenu, Flexbox, Icon } from '@lobehub/ui';
-import { AccordionRoot, ActionIcon } from '@lobehub/ui/base-ui';
-import { EyeOffIcon, MoreHorizontalIcon, SlidersHorizontalIcon } from 'lucide-react';
+import { Flexbox, Icon } from '@lobehub/ui';
+import { AccordionRoot } from '@lobehub/ui/base-ui';
+import { EyeOffIcon, SlidersHorizontalIcon } from 'lucide-react';
 import type { Key, ReactElement } from 'react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -170,16 +170,12 @@ const Body = memo(() => {
             navigate(navItem.url!);
           }}
         >
+          {/* Eduxwork：统一隐藏普通导航项右侧的“…”按钮，保留右键菜单。 */}
           <NavItem
             active={tab === key}
             contextMenuItems={getContextMenuItems(key)}
             icon={navItem.icon}
             title={navItem.title}
-            actions={
-              <DropdownMenu items={getContextMenuItems(key)}>
-                <ActionIcon icon={MoreHorizontalIcon} size={'small'} style={{ flex: 'none' }} />
-              </DropdownMenu>
-            }
           />
         </WorkspaceLink>
       );

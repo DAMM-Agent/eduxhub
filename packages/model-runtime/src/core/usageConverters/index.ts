@@ -1,5 +1,4 @@
 export { buildAnthropicInitialUsage, convertAnthropicUsage } from './anthropic';
-export { convertGoogleAIUsage } from './google-ai';
 export {
   convertOpenAIResponseUsage,
   convertOpenAITranscriptionUsage,

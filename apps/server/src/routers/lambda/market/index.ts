@@ -2,6 +2,7 @@ import { isDesktop } from '@lobechat/const';
 import { TRPCError } from '@trpc/server';
 import { serialize } from 'cookie';
 import debug from 'debug';
+import { ModelProviderSchema } from 'model-bank';
 import { z } from 'zod';
 
 import { marketDeploymentsRouter } from '@/business/server/lambda-routers/marketDeployments';
@@ -578,7 +579,7 @@ export const marketRouter = router({
   getProviderDetail: marketProcedure
     .input(
       z.object({
-        identifier: z.string(),
+        identifier: ModelProviderSchema,
         locale: z.string().optional(),
         withReadme: z.boolean().optional(),
       }),

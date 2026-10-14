@@ -20,8 +20,8 @@ const lastResort = (error) => {
       .whenReady()
       .then(() => {
         dialog.showErrorBox(
-          'LobeHub',
-          `LobeHub failed to start. Please download and reinstall the latest version.\n\n${DOWNLOAD_URL}`,
+          'EduxWork',
+          `EduxWork failed to start. Please download and reinstall the latest version.\n\n${DOWNLOAD_URL}`,
         );
         return shell.openExternal(DOWNLOAD_URL);
       })

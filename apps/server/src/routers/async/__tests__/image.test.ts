@@ -75,9 +75,23 @@ describe('imageRouter.createImage — model mapping failure reconciles billing',
     generationTopicId: 'topic-1',
     model: 'some-model',
     params: { prompt: 'a beautiful sunset' },
-    provider: 'test-provider',
+    provider: 'openai',
     taskId: 'task-1',
     ...overrides,
+  });
+
+  it('marks a queued job for a removed provider as unsupported without calling it', async () => {
+    const result = await imageRouter
+      .createCaller(mockCtx)
+      .createImage(createInput({ provider: 'comfyui' }));
+
+    expect(result.success).toBe(false);
+    expect(asyncTaskModelMock.update).toHaveBeenCalledWith('task-1', {
+      error: { body: { detail: 'UnsupportedProvider' }, name: 'UnsupportedProvider' },
+      status: AsyncTaskStatus.Error,
+    });
+    expect(initModelRuntimeFromDB).not.toHaveBeenCalled();
+    expect(resolveBusinessModelMapping).not.toHaveBeenCalled();
   });
 
   beforeEach(() => {

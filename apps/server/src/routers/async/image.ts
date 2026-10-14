@@ -9,6 +9,7 @@ import { AsyncTaskError, AsyncTaskStatus, RequestTrigger, type SpendOrigin } fro
 import { TRPCError } from '@trpc/server';
 import debug from 'debug';
 import { type RuntimeImageGenParams } from 'model-bank';
+import { assertModelProvider } from 'model-bank/modelProvider';
 import { z } from 'zod';
 
 import { getProviderContentPolicyErrorMessage } from '@/business/server/getProviderContentPolicyErrorMessage';
@@ -150,6 +151,8 @@ export const imageRouter = router({
         // spend keeps its attribution across the async boundary.
         spendOrigin = taskMetadata?.spendOrigin;
 
+        assertModelProvider(provider);
+
         // Resolve model mapping up front so both the success and error billing
         // paths can reference the resolved model id.
         ({ requestedModelId, resolvedModelId } = await resolveBusinessModelMapping(
@@ -215,23 +218,8 @@ export const imageRouter = router({
           log('Transforming image for generation');
           const { imageUrl, width, height } = response;
 
-          // Extract ComfyUI authentication headers if provider is ComfyUI
-          let authHeaders: Record<string, string> | undefined;
-          if (provider === 'comfyui') {
-            // Use the public interface method to get auth headers
-            // This avoids accessing private members and exposing credentials
-            authHeaders = modelRuntime.getAuthHeaders();
-            if (authHeaders) {
-              log('Using authentication headers for ComfyUI image download');
-            } else {
-              log('No authentication configured for ComfyUI');
-            }
-          }
-
-          const { image, thumbnailImage } = await generationService.transformImageForGeneration(
-            imageUrl,
-            authHeaders,
-          );
+          const { image, thumbnailImage } =
+            await generationService.transformImageForGeneration(imageUrl);
 
           // Check if operation has been cancelled
           checkAbortSignal(signal);

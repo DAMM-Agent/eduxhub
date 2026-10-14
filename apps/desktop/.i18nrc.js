@@ -1,6 +1,5 @@
-const { defineConfig } = require('@lobehub/i18n-cli');
-
-module.exports = defineConfig({
+/** @type {Parameters<typeof import('@lobehub/i18n-cli').defineConfig>[0]} */
+module.exports = {
   entry: 'resources/locales/en',
   entryLocale: 'en',
   output: 'resources/locales',
@@ -24,7 +23,7 @@ module.exports = defineConfig({
     'fa-IR',
   ],
   reference: [
-    'These are UI strings for LobeHub, an AI agent platform.',
+    'These are UI strings for EduxWork, an AI agent platform.',
     '',
     'Rules for every locale:',
     '- Use exactly one translation per product concept across the whole locale.',
@@ -34,7 +33,7 @@ module.exports = defineConfig({
     '- Keep every interpolation variable ({{like_this}}) and tag exactly as it',
     '  appears in the source: same names, same count. Never add a variable the',
     '  source does not have, and never drop one it does.',
-    '- Leave product and brand names untranslated: LobeHub, LobeAI, Claude Code,',
+    '- Leave product and brand names untranslated: EduxWork, Edux Ai, EduxAi, Claude Code,',
     '  Codex, OpenAI, Azure, GitHub, MCP.',
     '',
     'Turkish (tr-TR) glossary:',
@@ -53,4 +52,4 @@ module.exports = defineConfig({
   experimental: {
     jsonMode: true,
   },
-});
+};

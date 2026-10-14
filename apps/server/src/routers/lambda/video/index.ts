@@ -1,13 +1,10 @@
 import { randomBytes } from 'node:crypto';
 
-import { BRANDING_PROVIDER } from '@lobechat/business-const';
-import { isLobeHubModelAvailable } from '@lobechat/business-model-bank/model-config';
 import {
   buildMappedBusinessModelFields,
   resolveBusinessModelMapping,
 } from '@lobechat/business-model-runtime';
 import {
-  ChatErrorType,
   RequestTrigger,
   type VideoGenerationAsset,
   type VideoGenerationRoute,
@@ -17,6 +14,7 @@ import { isRecord } from '@lobechat/utils/object';
 import { TRPCError } from '@trpc/server';
 import debug from 'debug';
 import { and, eq } from 'drizzle-orm';
+import { ModelProviderSchema } from 'model-bank/modelProvider';
 import { supportsConversationalVideoEdit } from 'model-bank/standardParameters';
 import { z } from 'zod';
 
@@ -29,7 +27,6 @@ import { getVideoFreeQuota } from '@/business/server/video-generation/getVideoFr
 import { AsyncTaskModel } from '@/database/models/asyncTask';
 import { GenerationModel } from '@/database/models/generation';
 import { GenerationTopicModel } from '@/database/models/generationTopic';
-import { UserModel } from '@/database/models/user';
 import {
   asyncTasks,
   generationBatches,
@@ -95,7 +92,7 @@ const createVideoInputSchema = z.object({
     })
     .passthrough(),
   previousGenerationId: z.string().optional(),
-  provider: z.string(),
+  provider: ModelProviderSchema,
 });
 export type CreateVideoServicePayload = z.infer<typeof createVideoInputSchema>;
 
@@ -114,22 +111,6 @@ export const videoRouter = router({
         params: input.params,
         provider,
       });
-
-      // Reject lobehub model ids that are no longer in the model bank so callers get a
-      // clear error instead of an opaque downstream failure when the resolved channel
-      // model is no longer in the model bank.
-      if (
-        provider === BRANDING_PROVIDER &&
-        !(await isLobeHubModelAvailable(resolvedModelId, 'video', {
-          getUserEmail: async () => (await UserModel.findById(serverDB, userId))?.email,
-        }))
-      ) {
-        throw new TRPCError({
-          cause: { data: { modelType: 'video', requestedModel: model } },
-          code: 'BAD_REQUEST',
-          message: ChatErrorType.LobeHubModelDeprecated,
-        });
-      }
 
       log('Starting video creation process, input: %O', input);
 
@@ -527,7 +508,7 @@ export const videoRouter = router({
     .input(
       z.object({
         models: z
-          .array(z.object({ model: z.string().min(1), provider: z.string().min(1) }))
+          .array(z.object({ model: z.string().min(1), provider: ModelProviderSchema }))
           .max(200),
       }),
     )

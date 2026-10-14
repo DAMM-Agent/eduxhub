@@ -1,4 +1,5 @@
-import { type LobeDefaultAiModelListItem } from 'model-bank';
+import type { LobeDefaultAiModelListItem } from 'model-bank';
+import { isModelProvider } from 'model-bank/modelProvider';
 
 import { type EnabledProviderWithModels } from '@/types/aiProvider';
 
@@ -33,7 +34,8 @@ export interface ResolveStaleModelStateContext {
  * openai ids), and the builtin-bank match may have resolved via the id-only
  * fallback to an unrelated provider — enabling there would leave every other
  * surface referencing `${persistedProvider}/${model}` still stale. The bank's
- * provider is only a fallback for a persisted provider that no longer exists.
+ * provider is only a fallback for a supported or unspecified persisted provider.
+ * Removed providers must be reselected explicitly, never enabled via an alias.
  */
 export const resolveEnableTargetProviderId = (
   value: { model: string; provider?: string } | undefined,
@@ -48,6 +50,7 @@ export const resolveEnableTargetProviderId = (
   },
 ): string | undefined => {
   const persisted = value?.provider;
+  if (persisted && !isModelProvider(persisted)) return;
 
   if (
     persisted &&
@@ -56,7 +59,7 @@ export const resolveEnableTargetProviderId = (
   )
     return persisted;
 
-  return metaProviderId;
+  return metaProviderId && isModelProvider(metaProviderId) ? metaProviderId : undefined;
 };
 
 /**
@@ -70,6 +73,7 @@ export const resolveStaleModelState = (
   { builtinAiModelList, enabledList, modelRedirects, modelType }: ResolveStaleModelStateContext,
 ): StaleModelState | undefined => {
   if (!value?.model) return;
+  if (value.provider && !isModelProvider(value.provider)) return { status: 'removed' };
 
   const isInEnabledList = enabledList.some(
     (provider) =>
@@ -81,6 +85,7 @@ export const resolveStaleModelState = (
     builtinAiModelList.find(
       (m) =>
         m.id === id &&
+        isModelProvider(m.providerId) &&
         (providerId === undefined || m.providerId === providerId) &&
         m.type === modelType,
     );

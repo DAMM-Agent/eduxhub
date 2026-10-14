@@ -1,5 +1,4 @@
 import { Button } from '@lobehub/ui/base-ui';
-import { ModelProvider } from 'model-bank/modelProvider';
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import urlJoin from 'url-join';
@@ -37,14 +36,10 @@ const ChatInvalidAPIKey = memo<ChatInvalidAPIKeyProps>(({ id, provider }) => {
           {t('unlock.goToSettings', { ns: 'error' })}
         </Button>
       }
-      desc={
-        provider === ModelProvider.Bedrock
-          ? t('bedrock.unlock.description')
-          : t(`unlock.apiKey.description`, {
-              name: providerName,
-              ns: 'error',
-            })
-      }
+      desc={t(`unlock.apiKey.description`, {
+        name: providerName,
+        ns: 'error',
+      })}
     />
   );
 });

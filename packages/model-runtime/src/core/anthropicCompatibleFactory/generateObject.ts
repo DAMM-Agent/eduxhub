@@ -2,12 +2,12 @@ import type Anthropic from '@anthropic-ai/sdk';
 import debug from 'debug';
 import type { Pricing } from 'model-bank';
 
-import { stripUnsupportedClaudeAssistantPrefill } from '../../providers/anthropic/claudePrefill';
-import { rejectsForcedToolChoice } from '../../providers/anthropic/modelId';
 import type { GenerateObjectOptions, GenerateObjectPayload } from '../../types';
 import { buildAnthropicMessages, buildAnthropicTools } from '../contextBuilders/anthropic';
 import { buildAnthropicInitialUsage } from '../usageConverters/anthropic';
 import { withUsageCost } from '../usageConverters/utils/withUsageCost';
+import { stripUnsupportedClaudeAssistantPrefill } from './claudePrefill';
+import { rejectsForcedToolChoice } from './modelId';
 
 const log = debug('lobe-model-runtime:anthropic:generate-object');
 

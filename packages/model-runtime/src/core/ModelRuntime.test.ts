@@ -10,10 +10,6 @@ import type { CreateImagePayload } from '../types/image';
 import type { CreateVideoPayload } from '../types/video';
 import { ModelRuntime, type ModelRuntimeHooks } from './ModelRuntime';
 
-vi.mock('../providers/lobehub', () => ({
-  LobeHubAI: class LobeHubAI {},
-}));
-
 /**
  * Mock createTraceOptions for testing purposes.
  * This avoids importing from @/server/modules/ModelRuntime which has database dependencies.
@@ -29,38 +25,10 @@ const createMockTraceOptions = (callbacks?: Partial<ChatStreamCallbacks>) => ({
 });
 
 const specialProviders = [
-  { id: 'openai', payload: { apiKey: 'user-openai-key', baseURL: 'user-endpoint' } },
   {
-    id: ModelProvider.Azure,
-    payload: {
-      apiKey: 'user-azure-key',
-      baseURL: 'https://user-azure.openai.azure.com',
-      apiVersion: '2024-06-01',
-    },
-    runtimeBaseURL: 'https://user-azure.openai.azure.com/openai/v1',
-  },
-  {
-    id: ModelProvider.AzureAI,
-    payload: {
-      apiKey: 'user-azure-key',
-      baseURL: 'user-azure-endpoint',
-    },
-  },
-  {
-    id: ModelProvider.Bedrock,
-    payload: {
-      accessKeyId: 'user-aws-id',
-      accessKeySecret: 'user-aws-secret',
-      region: 'user-aws-region',
-    },
-  },
-  {
-    id: ModelProvider.Ollama,
-    payload: { baseURL: 'https://user-ollama-url' },
-  },
-  {
-    id: ModelProvider.Cloudflare,
-    payload: { baseURLOrAccountID: 'https://user-ollama-url' },
+    id: 'openai',
+    payload: { apiKey: 'user-openai-key', baseURL: 'https://api.example.test/v1' },
+    runtimeBaseURL: 'https://api.example.test/v1',
   },
 ];
 
@@ -88,8 +56,8 @@ beforeEach(async () => {
 
 describe('ModelRuntime', () => {
   describe('should initialize with various providers', () => {
-    const providers = Object.values(ModelProvider).filter((i) => i !== 'lobehub');
-    const specialProviderIds = [ModelProvider.VertexAI, ...specialProviders.map((p) => p.id)];
+    const providers = Object.values(ModelProvider);
+    const specialProviderIds = specialProviders.map((p) => p.id);
 
     const generalTestProviders = providers.filter(
       (provider) => !specialProviderIds.includes(provider),
@@ -1005,4 +973,25 @@ describe('ModelRuntime', () => {
       });
     });
   });
+});
+
+describe('retired provider dispatch', () => {
+  it.each(['google', 'anthropic', 'azure', 'lobehub', 'volcenginecodingplan', 'custom-provider'])(
+    'rejects %s instead of using OpenAI',
+    (provider) => {
+      const fetch = vi.fn();
+      vi.stubGlobal('fetch', fetch);
+      try {
+        expect(() =>
+          ModelRuntime.initializeWithProvider(provider, {
+            apiKey: 'saved-key',
+            baseURL: 'https://legacy.example.test/v1',
+          }),
+        ).toThrow('no longer supported');
+        expect(fetch).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    },
+  );
 });

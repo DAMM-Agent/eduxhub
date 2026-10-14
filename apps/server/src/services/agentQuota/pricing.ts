@@ -1,6 +1,7 @@
 import type { QuotaModelPrice } from '@lobechat/heterogeneous-agents/quota';
-import anthropicModels from 'model-bank/anthropic';
 import openaiModels from 'model-bank/openai';
+
+import { CLAUDE_CODE_MODEL_PRICES } from './claudeCodeModelPrices';
 
 /**
  * $ per million tokens for a model, from the model bank. The bank lists the
@@ -42,7 +43,7 @@ const bankModelPrice = (
 };
 
 export const claudeModelPrice = (modelId: string): QuotaModelPrice | null =>
-  bankModelPrice(anthropicModels, modelId);
+  CLAUDE_CODE_MODEL_PRICES[modelId] ?? null;
 
 /** Codex turns run OpenAI models, priced out of the bank's openai table. */
 export const codexModelPrice = (modelId: string): QuotaModelPrice | null =>

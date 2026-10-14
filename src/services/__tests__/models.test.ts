@@ -1,5 +1,6 @@
 import type * as FetchSSE from '@lobechat/fetch-sse';
 import { getMessageError } from '@lobechat/fetch-sse';
+import { assertModelProvider, UnsupportedModelProviderError } from 'model-bank/modelProvider';
 import { type Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -70,7 +71,10 @@ describe('ModelsService', () => {
     mockedCreateHeaderWithAuth.mockClear();
     mockedGetMessageError.mockClear();
     mockedResolveRuntimeProvider.mockReset();
-    mockedResolveRuntimeProvider.mockImplementation((provider: string) => provider);
+    mockedResolveRuntimeProvider.mockImplementation((provider) => {
+      assertModelProvider(provider);
+      return provider;
+    });
     mockedInitializeWithClientStore.mockClear();
   });
 
@@ -87,17 +91,11 @@ describe('ModelsService', () => {
       expect(mockedInitializeWithClientStore).not.toHaveBeenCalled();
     });
 
-    it('should map custom provider to runtime provider endpoint', async () => {
-      mockedResolveRuntimeProvider.mockImplementation(() => 'openai');
-      (fetch as Mock).mockResolvedValueOnce(
-        new Response(JSON.stringify({ models: [] }), { status: 200 }),
+    it('refuses a removed provider before making a model-list request', async () => {
+      await expect(modelsService.getModels('custom-provider')).rejects.toThrow(
+        UnsupportedModelProviderError,
       );
-
-      await modelsService.getModels('custom-provider');
-
-      expect(mockedResolveRuntimeProvider).toHaveBeenCalledWith('custom-provider');
-      // API endpoint uses original provider, allowing server to query correct config
-      expect(fetch).toHaveBeenCalledWith('/webapi/models/custom-provider', { headers: {} });
+      expect(fetch).not.toHaveBeenCalled();
       expect(mockedInitializeWithClientStore).not.toHaveBeenCalled();
     });
 
@@ -129,11 +127,11 @@ describe('ModelsService', () => {
           JSON.stringify({
             body: {
               error: {
-                message: 'Cloudflare models API returned an invalid response',
+                message: 'Qwen models API returned an invalid response',
                 name: 'Error',
               },
-              message: 'Cloudflare models API returned an invalid response',
-              provider: 'cloudflare',
+              message: 'Qwen models API returned an invalid response',
+              provider: 'qwen',
             },
             errorType: 'ProviderBizError',
           }),
@@ -141,15 +139,15 @@ describe('ModelsService', () => {
         ),
       );
 
-      await expect(modelsService.getModels('cloudflare')).rejects.toThrow(
-        'Cloudflare models API returned an invalid response',
+      await expect(modelsService.getModels('qwen')).rejects.toThrow(
+        'Qwen models API returned an invalid response',
       );
     });
 
     it('should fall back to translated error message when server error body has no message', async () => {
       mockedGetMessageError.mockResolvedValueOnce({
         body: {
-          provider: 'cloudflare',
+          provider: 'qwen',
         },
         message: 'fallback model fetch failure',
         type: 'ProviderBizError',
@@ -158,7 +156,7 @@ describe('ModelsService', () => {
         new Response(
           JSON.stringify({
             body: {
-              provider: 'cloudflare',
+              provider: 'qwen',
             },
             errorType: 'ProviderBizError',
           }),
@@ -166,9 +164,7 @@ describe('ModelsService', () => {
         ),
       );
 
-      await expect(modelsService.getModels('cloudflare')).rejects.toThrow(
-        'fallback model fetch failure',
-      );
+      await expect(modelsService.getModels('qwen')).rejects.toThrow('fallback model fetch failure');
     });
 
     it('should propagate server fetch network errors', async () => {

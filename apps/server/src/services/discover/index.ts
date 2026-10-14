@@ -67,6 +67,7 @@ import debug from 'debug';
 import { cloneDeep, countBy, isString, merge, uniq, uniqBy } from 'es-toolkit/compat';
 import matter from 'gray-matter';
 import { isAiModelVisible } from 'model-bank';
+import { assertModelProvider, isModelProvider } from 'model-bank/modelProvider';
 import urlJoin from 'url-join';
 
 import { type TrustedClientUserInfo } from '@/libs/trusted-client';
@@ -1341,6 +1342,7 @@ export class DiscoverService {
   }): Promise<DiscoverProviderDetail | undefined> => {
     log('getProviderDetail: params=%O', params);
     const { identifier, locale, withReadme } = params;
+    assertModelProvider(identifier);
     const builtinModels = await loadBuiltinModels();
     const all = await this._getProviderList();
     const provider = all.find((item) => item.identifier === identifier);
@@ -1478,7 +1480,9 @@ export class DiscoverService {
   private _getRawModelList = async (): Promise<DiscoverModelItem[]> => {
     log('_getRawModelList: fetching raw model list');
     const builtinModels = await loadBuiltinModels();
-    const visibleModels = builtinModels.filter(isAiModelVisible);
+    const visibleModels = builtinModels.filter(
+      (model) => isModelProvider(model.providerId) && isAiModelVisible(model),
+    );
     const result = visibleModels.map((item) => {
       const identifier = (item.id.split('/').at(-1) || item.id).toLowerCase();
       const providers = uniq(
@@ -1574,7 +1578,9 @@ export class DiscoverService {
     log('getModelCategories: params=%O', params);
     const { q } = params;
     const builtinModels = await loadBuiltinModels();
-    let list = builtinModels.filter(isAiModelVisible);
+    let list = builtinModels.filter(
+      (model) => isModelProvider(model.providerId) && isAiModelVisible(model),
+    );
     if (q) {
       const originalCount = list.length;
       list = list.filter((item) => {

@@ -4,6 +4,7 @@ import { mergeModelRuntimeHooks } from '@lobechat/model-runtime';
 import type { LobeAgentChatConfig, LobeAgentConfig, UserSystemAgentConfig } from '@lobechat/types';
 import { RequestTrigger } from '@lobechat/types';
 import { and, eq } from 'drizzle-orm';
+import { assertModelProvider, UnsupportedModelProviderError } from 'model-bank';
 
 import { getBusinessModelRuntimeHooks } from '@/business/server/model-runtime';
 import { DEFAULT_AGENT_CHAT_CONFIG, DEFAULT_SYSTEM_AGENT_CONFIG } from '@/const/settings';
@@ -197,6 +198,7 @@ export class ChatService extends BaseService {
    * @returns API Key
    */
   private async getApiKey(provider: string) {
+    assertModelProvider(provider);
     const gateKeeper = await KeyVaultsGateKeeper.initWithEnvKey();
 
     const aiProviderConfigs = await this.db.query.aiProviders.findMany({
@@ -353,6 +355,7 @@ export class ChatService extends BaseService {
 
     const provider = params.provider || this.config.defaultProvider!;
     const model = params.model || this.config.defaultModel!;
+    assertModelProvider(provider);
 
     this.log('info', '开始聊天对话', {
       messageCount: params.messages.length,
@@ -640,6 +643,7 @@ export class ChatService extends BaseService {
         error: error instanceof Error ? error.message : String(error),
         hasUserChatConfig: !!params.chatConfig,
       });
+      if (error instanceof UnsupportedModelProviderError) throw error;
       throw this.createCommonError('生成回复失败');
     }
   }

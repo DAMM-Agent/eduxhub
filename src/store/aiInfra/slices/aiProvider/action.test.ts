@@ -94,12 +94,12 @@ describe('AiProviderAction', () => {
     const navigateFromAToB = () => {
       act(() => {
         useAiInfraStore.setState({
-          activeAiProvider: 'provider-a',
-          aiModelListMap: { 'provider-a': [model('a-model')], 'provider-b': [model('b-model')] },
+          activeAiProvider: 'openai',
+          aiModelListMap: { openai: [model('a-model')], moonshot: [model('b-model')] },
         });
       });
 
-      return renderHook(() => useAiInfraStore.getState().useFetchAiProviderItem('provider-b'), {
+      return renderHook(() => useAiInfraStore.getState().useFetchAiProviderItem('moonshot'), {
         wrapper,
       });
     };
@@ -112,7 +112,7 @@ describe('AiProviderAction', () => {
       navigateFromAToB();
 
       const state = useAiInfraStore.getState();
-      expect(state.activeAiProvider).toBe('provider-b');
+      expect(state.activeAiProvider).toBe('moonshot');
       expect(aiModelSelectors.filteredAiProviderModelList(state).map((m) => m.id)).toEqual([
         'b-model',
       ]);
@@ -124,7 +124,7 @@ describe('AiProviderAction', () => {
       navigateFromAToB();
       await act(async () => {});
 
-      expect(useAiInfraStore.getState().activeAiProvider).toBe('provider-b');
+      expect(useAiInfraStore.getState().activeAiProvider).toBe('moonshot');
     });
   });
 });

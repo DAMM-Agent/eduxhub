@@ -7,6 +7,7 @@ import type { VideoGenerationUsage } from '@lobechat/model-runtime';
 import { RequestTrigger, type SpendOrigin, type VideoGenerationRoute } from '@lobechat/types';
 import debug from 'debug';
 import type { RuntimeVideoGenParams } from 'model-bank';
+import { assertModelProvider, UnsupportedModelProviderError } from 'model-bank/modelProvider';
 
 import { getProviderContentPolicyErrorMessage } from '@/business/server/getProviderContentPolicyErrorMessage';
 import { trackProviderContentPolicyViolation } from '@/business/server/trackProviderContentPolicyViolation';
@@ -79,6 +80,7 @@ export async function processBackgroundVideoPolling(
     const videoService = new VideoGenerationService(db, userId, workspaceId);
     const generationModel = new GenerationModel(db, userId, workspaceId);
 
+    assertModelProvider(provider);
     const modelRuntime = await initModelRuntimeFromDB(db, userId, provider, workspaceId);
     // `route` was pinned for the mapped model id at creation, so poll with that id too;
     // the user-facing alias may resolve to a router list that no longer holds the route.
@@ -199,6 +201,7 @@ export async function processBackgroundVideoPolling(
       }
     }
 
+    const unsupportedProvider = error instanceof UnsupportedModelProviderError;
     const providerContentPolicyMessage = await getProviderContentPolicyErrorMessage({
       error,
       provider,
@@ -220,12 +223,16 @@ export async function processBackgroundVideoPolling(
     }
     await asyncTaskModel.update(asyncTaskId, {
       error: new AsyncTaskError(
-        providerContentPolicyMessage
-          ? AsyncTaskErrorType.ProviderContentModeration
-          : AsyncTaskErrorType.ServerError,
-        providerContentPolicyMessage ??
-          'Background polling failed: ' +
-            (error instanceof Error ? error.message : 'Unknown error'),
+        unsupportedProvider
+          ? AsyncTaskErrorType.UnsupportedProvider
+          : providerContentPolicyMessage
+            ? AsyncTaskErrorType.ProviderContentModeration
+            : AsyncTaskErrorType.ServerError,
+        unsupportedProvider
+          ? AsyncTaskErrorType.UnsupportedProvider
+          : (providerContentPolicyMessage ??
+              'Background polling failed: ' +
+                (error instanceof Error ? error.message : 'Unknown error')),
       ),
       status: AsyncTaskStatus.Error,
     });

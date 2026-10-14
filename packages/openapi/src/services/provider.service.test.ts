@@ -1,6 +1,5 @@
 // @vitest-environment node
 import type * as BusinessConst from '@lobechat/business-const';
-import { OFFICIAL_PROVIDER_DISABLE_ERROR } from '@lobechat/business-const';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LobeChatDatabase } from '@/database/type';
@@ -64,8 +63,8 @@ describe('ProviderService', () => {
 
   const createService = () => new ProviderService({} as LobeChatDatabase, 'test-user-id');
 
-  describe('official provider guard', () => {
-    it('should reject creating the official provider as disabled', async () => {
+  describe('removed provider guard', () => {
+    it('should reject creating a removed provider', async () => {
       const service = createService();
 
       await expect(
@@ -74,12 +73,12 @@ describe('ProviderService', () => {
           id: 'lobehub',
         }),
       ).rejects.toMatchObject({
-        message: OFFICIAL_PROVIDER_DISABLE_ERROR,
-        name: 'BusinessError',
+        message: expect.stringContaining('UnsupportedProvider'),
+        name: 'ValidationError',
       });
     });
 
-    it('should reject updating the official provider as disabled', async () => {
+    it('should reject updating a removed provider', async () => {
       const service = createService();
 
       await expect(
@@ -88,8 +87,8 @@ describe('ProviderService', () => {
           id: 'lobehub',
         }),
       ).rejects.toMatchObject({
-        message: OFFICIAL_PROVIDER_DISABLE_ERROR,
-        name: 'BusinessError',
+        message: expect.stringContaining('UnsupportedProvider'),
+        name: 'ValidationError',
       });
     });
   });

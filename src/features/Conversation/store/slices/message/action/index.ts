@@ -1,4 +1,4 @@
-import { shouldDropUnsupportedClaudeAssistantPrefill } from '@lobechat/model-runtime/providers/anthropic/modelId';
+import { shouldDropUnsupportedClaudeAssistantPrefill } from '@lobechat/model-runtime/anthropicCompatible/modelId';
 import { toast } from '@lobehub/ui/base-ui';
 import { t } from 'i18next';
 import type { StateCreator } from 'zustand';

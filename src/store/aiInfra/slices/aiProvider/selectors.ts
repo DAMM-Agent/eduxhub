@@ -1,3 +1,4 @@
+import { isModelProvider } from 'model-bank/modelProvider';
 import { isProviderFetchOnClient as isSharedProviderFetchOnClient } from 'model-bank/modelProviders';
 
 import { type AIProviderStoreState } from '@/store/aiInfra/initialState';
@@ -7,13 +8,18 @@ import { type GlobalLLMProviderKey } from '@/types/user/settings';
 
 // List
 const enabledAiProviderList = (s: AIProviderStoreState) =>
-  s.aiProviderList.filter((item) => item.enabled).sort((a, b) => a.sort! - b.sort!);
+  s.aiProviderList
+    .filter((item) => isModelProvider(item.id) && item.enabled)
+    .sort((a, b) => a.sort! - b.sort!);
 
 const disabledAiProviderList = (s: AIProviderStoreState) =>
-  s.aiProviderList.filter((item) => !item.enabled && item.source !== AiProviderSourceEnum.Custom);
+  s.aiProviderList.filter((item) => isModelProvider(item.id) && !item.enabled);
 
 const disabledCustomAiProviderList = (s: AIProviderStoreState) =>
-  s.aiProviderList.filter((item) => !item.enabled && item.source === AiProviderSourceEnum.Custom);
+  s.aiProviderList.filter(
+    (item) =>
+      isModelProvider(item.id) && !item.enabled && item.source === AiProviderSourceEnum.Custom,
+  );
 
 const enabledEmbeddingModelList = (s: AIProviderStoreState) => s.enabledEmbeddingModelList || [];
 const enabledAsrModelList = (s: AIProviderStoreState) => s.enabledAsrModelList || [];
@@ -35,19 +41,22 @@ const isProviderLoading = (id: string) => (s: AIProviderStoreState) =>
 /**
  * Get provider detail by id from the cache map
  */
-const providerDetailById = (id: string) => (s: AIProviderStoreState) => s.aiProviderDetailMap[id];
+const providerDetailById = (id: string) => (s: AIProviderStoreState) =>
+  isModelProvider(id) ? s.aiProviderDetailMap[id] : undefined;
 
 /**
  * Get active provider config from the cache map
  */
 const activeProviderConfig = (s: AIProviderStoreState) =>
-  s.activeAiProvider ? s.aiProviderDetailMap[s.activeAiProvider] : undefined;
+  s.activeAiProvider && isModelProvider(s.activeAiProvider)
+    ? s.aiProviderDetailMap[s.activeAiProvider]
+    : undefined;
 
 /**
  * Check if provider config is loading (data not yet in cache)
  */
 const isAiProviderConfigLoading = (id: string) => (s: AIProviderStoreState) =>
-  !s.aiProviderDetailMap[id];
+  isModelProvider(id) && !s.aiProviderDetailMap[id];
 
 const activeProviderKeyVaults = (s: AIProviderStoreState) => activeProviderConfig(s)?.keyVaults;
 
@@ -64,7 +73,7 @@ const isActiveProviderApiKeyNotEmpty = (s: AIProviderStoreState) => {
 const providerConfigById =
   (id: string) =>
   (s: AIProviderStoreState): AiProviderRuntimeConfig | undefined => {
-    if (!id) return undefined;
+    if (!isModelProvider(id)) return undefined;
 
     return s.aiProviderRuntimeConfig?.[id];
   };
@@ -82,7 +91,7 @@ const isProviderFetchOnClient =
     isSharedProviderFetchOnClient(provider, providerConfigById(provider)(s));
 
 const providerKeyVaults = (provider: string | undefined) => (s: AIProviderStoreState) => {
-  if (!provider) return undefined;
+  if (!provider || !isModelProvider(provider)) return undefined;
 
   return s.aiProviderRuntimeConfig?.[provider]?.keyVaults;
 };

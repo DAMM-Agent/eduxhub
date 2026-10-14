@@ -1,4 +1,5 @@
 export default {
+  'UnsupportedProvider': 'This model provider is no longer supported. Select a supported provider.',
   'AccountDeactivated':
     'Your account has been deactivated or suspended. This may be due to policy, security, or account review reasons. Please contact the provider support for assistance.',
   'AgentRuntimeError':

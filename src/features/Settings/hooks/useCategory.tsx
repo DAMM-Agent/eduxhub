@@ -121,10 +121,8 @@ export const useCategory = () => {
         label: t('tab.hotkey'),
       },
       // Messenger bindings are a per-user identity (owned by userId), so they
-      // live with the account rather than the agent configuration. The bots
-      // are LobeHub-operated: their credentials are only ever written by the
-      // cloud admin, so a self-hosted deployment has nothing to bind to.
-      enableBusinessFeatures && {
+      // live with the account and remain visible regardless of business features.
+      /* enableBusinessFeatures && */ {
         icon: MessageCircleIcon,
         key: SettingsTabs.Messenger,
         label: t('tab.messenger'),

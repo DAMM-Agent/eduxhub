@@ -41,12 +41,3 @@ export type CreateImageResponse = {
    */
   modelUsage?: ModelUsage;
 };
-
-// New: Runtime interface for authenticated image download support
-export interface AuthenticatedImageRuntime {
-  /**
-   * Get authentication headers for image download
-   * Used when the image server requires authentication
-   */
-  getAuthHeaders: () => Record<string, string> | undefined;
-}

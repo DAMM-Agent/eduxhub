@@ -48,11 +48,13 @@ const HomePortrait = memo(() => {
   // the built-in catalog covers everyone else.
   const fullBodyArtwork = useAgentStore(agentSelectors.getAgentFullBodyArtworkById(agentId ?? ''));
   const artwork = resolveChiefAgentArtwork(meta.avatar || DEFAULT_INBOX_AVATAR);
-  const hero = fullBodyArtwork || artwork.hero;
+  const _hero = fullBodyArtwork || artwork.hero;
 
   return (
     <div className={styles.root}>
-      <img aria-hidden alt="" className={styles.image} key={hero} src={hero} />
+      {/* Eduxwork：暂时停用首页助理立绘，避免加载远程图片。
+      <img aria-hidden alt="" className={styles.image} key={_hero} src={_hero} />
+      */}
     </div>
   );
 });

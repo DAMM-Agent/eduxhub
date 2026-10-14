@@ -18,7 +18,6 @@ import { EditorSlot } from './EditorSlot';
 import { stripMarkdownLinks } from './hintFormat';
 import { InputBannerQueue, InputBannerSegment } from './InputBanner';
 import InputDragUpload from './InputDragUpload';
-import MessengerBanner, { MESSENGER_BANNER_ID } from './MessengerBanner';
 import { useSend } from './useSend';
 
 const styles = createStaticStyles(({ css }) => ({
@@ -115,9 +114,11 @@ const InputArea = ({
                 <NewModelShortcuts />
               </InputBannerSegment>
             )}
+            {/* Eduxwork：统一隐藏首页聊天应用提示栏。
             <InputBannerSegment dismissId={MESSENGER_BANNER_ID}>
               <MessengerBanner />
             </InputBannerSegment>
+            */}
           </InputBannerQueue>
         )}
       </Flexbox>

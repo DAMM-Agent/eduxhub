@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ModelProviderSchema } from '../const/modelProvider';
 import { type ModelParamsSchema, type VideoModelParamsSchema } from '../standard-parameters';
 
 export type ModelPriceCurrency = 'CNY' | 'USD';
@@ -729,7 +730,7 @@ export const CreateAiModelSchema = z.object({
   contextWindowTokens: z.number().optional(),
   displayName: z.string().optional(),
   id: z.string(),
-  providerId: z.string(),
+  providerId: ModelProviderSchema,
   releasedAt: z.string().optional(),
   settings: AiModelSettingsSchema.optional(),
   type: AiModelTypeSchema.optional(),
@@ -792,7 +793,7 @@ export interface AiModelSortMap {
 export const ToggleAiModelEnableSchema = z.object({
   enabled: z.boolean(),
   id: z.string(),
-  providerId: z.string(),
+  providerId: ModelProviderSchema,
   source: z.enum(['builtin', 'custom', 'remote']).optional(),
   type: AiModelTypeSchema.optional(),
 });

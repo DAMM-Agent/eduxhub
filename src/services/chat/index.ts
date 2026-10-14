@@ -7,7 +7,6 @@ import {
 import { type FetchSSEOptions } from '@lobechat/fetch-sse';
 import { fetchSSE, standardizeAnimationStyle } from '@lobechat/fetch-sse';
 import type { ChatCompletionErrorPayload } from '@lobechat/model-runtime';
-import { isResponsesAPIModel } from '@lobechat/model-runtime/providers/openai/modelId';
 import { AgentRuntimeError } from '@lobechat/model-runtime/utils/createError';
 import {
   ChatErrorType,
@@ -21,7 +20,7 @@ import {
   type UIChatMessage,
 } from '@lobechat/types';
 import { merge } from 'es-toolkit/compat';
-import { ModelProvider } from 'model-bank/modelProvider';
+import { assertModelProvider, ModelProvider } from 'model-bank/modelProvider';
 
 import { DEFAULT_AGENT_CONFIG } from '@/const/settings';
 import { getSearchConfig } from '@/helpers/getSearchConfig';
@@ -50,15 +49,7 @@ import {
 } from './mecha';
 import { type FetchOptions } from './types';
 
-const providersWithDeploymentName = new Set<string>([
-  ModelProvider.Azure,
-  ModelProvider.AzureAI,
-  ModelProvider.KimiCodingPlan,
-  ModelProvider.Qwen,
-  ModelProvider.Spark,
-  ModelProvider.Volcengine,
-  ModelProvider.VolcengineCodingPlan,
-]);
+const providersWithDeploymentName = new Set<string>([ModelProvider.Qwen, ModelProvider.Volcengine]);
 export interface GetChatCompletionPayload extends Partial<Omit<ChatStreamPayload, 'messages'>> {
   additionalContexts?: readonly RuntimeAdditionalContextFragment[];
   agentId?: string;
@@ -287,6 +278,7 @@ class ChatService {
     const requestTrigger = metadata?.trigger;
 
     const { provider = ModelProvider.OpenAI, ...res } = params;
+    assertModelProvider(provider);
 
     // =================== process model =================== //
     // ===================================================== //
@@ -294,11 +286,7 @@ class ChatService {
     const deploymentName = providersWithDeploymentName.has(provider)
       ? findDeploymentName(model, provider)
       : undefined;
-    const shouldUseDeploymentField =
-      (provider === ModelProvider.Azure && isResponsesAPIModel(model)) ||
-      provider === ModelProvider.Spark;
-
-    if (!shouldUseDeploymentField && deploymentName) {
+    if (deploymentName) {
       model = deploymentName;
     }
 
@@ -327,9 +315,6 @@ class ChatService {
       {
         ...res,
         apiMode,
-        ...(shouldUseDeploymentField &&
-          deploymentName &&
-          deploymentName !== model && { deploymentName }),
         model,
       },
     );

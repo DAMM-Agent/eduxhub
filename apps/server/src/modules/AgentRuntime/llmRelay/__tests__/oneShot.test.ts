@@ -81,7 +81,7 @@ describe('one-shot relay', () => {
     vi.stubEnv('KEY_VAULTS_SECRET', 'test-secret');
     redis = new FakeRedis();
     streamManager = createGatewayStreamManager();
-    resolveProviderRelay.mockResolvedValue({ runtimeProvider: 'ollama' });
+    resolveProviderRelay.mockResolvedValue({ runtimeProvider: 'openai' });
   });
 
   afterEach(() => {
@@ -118,10 +118,10 @@ describe('one-shot relay', () => {
   });
 
   it('fails at once with no_executor when no tab is attached to the request (bot, workflow)', async () => {
-    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'ollama')).rejects.toMatchObject({
+    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'openai')).rejects.toMatchObject({
       error: { context: 'no_client_request', reason: 'no_executor' },
       errorType: AgentRuntimeErrorType.ClientLlmExecutorUnavailable,
-      provider: 'ollama',
+      provider: 'openai',
     });
     expect(streamManager.sendLlmExecute).not.toHaveBeenCalled();
   });
@@ -130,7 +130,7 @@ describe('one-shot relay', () => {
     for (const channel of ['llmcall:user-2:0b7c1d2e-aaaa', 'op_123', 'llmcall:user-1:x']) {
       await expect(
         runWithLlmRelayRequest({ channel, clientId: 'tab-a' }, USER_ID, () =>
-          initModelRuntimeForRequest({} as any, USER_ID, 'ollama'),
+          initModelRuntimeForRequest({} as any, USER_ID, 'openai'),
         ),
       ).rejects.toMatchObject({ error: { reason: 'no_executor' } });
     }
@@ -139,7 +139,7 @@ describe('one-shot relay', () => {
 
   it('relays every call of the request on its channel, then closes it', async () => {
     const results = await runWithLlmRelayRequest(REQUEST, USER_ID, async () => {
-      const runtime = await initModelRuntimeForRequest({} as any, USER_ID, 'ollama');
+      const runtime = await initModelRuntimeForRequest({} as any, USER_ID, 'openai');
       const first = generate(runtime);
       const firstExecute = await answer(0, { title: 'One' });
       const second = generate(runtime);
@@ -156,8 +156,8 @@ describe('one-shot relay', () => {
       method: 'generateObject',
       operationId: CHANNEL,
       preferredClientId: 'tab-a',
-      provider: 'ollama',
-      runtimeProvider: 'ollama',
+      provider: 'openai',
+      runtimeProvider: 'openai',
     });
     expect(streamManager.openLlmRelayChannel).toHaveBeenCalledTimes(1);
     expect(streamManager.openLlmRelayChannel).toHaveBeenCalledWith(CHANNEL, USER_ID);
@@ -168,7 +168,7 @@ describe('one-shot relay', () => {
 
   it('treats a call made after the request ended (deferred work) as having no tab', async () => {
     const runtime = await runWithLlmRelayRequest(REQUEST, USER_ID, () =>
-      initModelRuntimeForRequest({} as any, USER_ID, 'ollama'),
+      initModelRuntimeForRequest({} as any, USER_ID, 'openai'),
     );
 
     await expect(generate(runtime)).rejects.toMatchObject({
@@ -184,17 +184,17 @@ describe('one-shot relay', () => {
     streamManager = { publishStreamEvent: vi.fn() };
     await expect(
       runWithLlmRelayRequest(REQUEST, USER_ID, () =>
-        initModelRuntimeForRequest({} as any, USER_ID, 'ollama'),
+        initModelRuntimeForRequest({} as any, USER_ID, 'openai'),
       ),
     ).resolves.toEqual({ server: true });
     // No tab attached (bot, workflow): still the server runtime, not no_executor.
-    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'ollama')).resolves.toEqual({
+    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'openai')).resolves.toEqual({
       server: true,
     });
 
     streamManager = createGatewayStreamManager();
     redis = null;
-    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'ollama')).resolves.toEqual({
+    await expect(initModelRuntimeForRequest({} as any, USER_ID, 'openai')).resolves.toEqual({
       server: true,
     });
     expect(initModelRuntimeFromDB).toHaveBeenCalledTimes(3);
@@ -206,7 +206,7 @@ describe('one-shot relay', () => {
 
     await expect(
       runWithLlmRelayRequest(REQUEST, USER_ID, async () =>
-        generate(await initModelRuntimeForRequest({} as any, USER_ID, 'ollama')),
+        generate(await initModelRuntimeForRequest({} as any, USER_ID, 'openai')),
       ),
     ).rejects.toMatchObject({ error: { reason: 'relay_unsupported' } });
     expect(streamManager.sendLlmExecute).not.toHaveBeenCalled();
@@ -219,7 +219,7 @@ describe('one-shot relay', () => {
     });
 
     const response = await runRouteWithLlmRelayRequest(req, USER_ID, async () => {
-      const runtime = await initModelRuntimeForRequest({} as any, USER_ID, 'ollama');
+      const runtime = await initModelRuntimeForRequest({} as any, USER_ID, 'openai');
       const value = generate(runtime);
       await answer(0, 'done');
       return new Response(JSON.stringify(await value), { status: 201 });

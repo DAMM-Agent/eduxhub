@@ -1,5 +1,6 @@
 import { isOfficialProvider, OFFICIAL_PROVIDER_DISABLE_ERROR } from '@lobechat/business-const';
-import { and, asc, count, desc, eq, ilike, or } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { assertModelProvider, SUPPORTED_MODEL_PROVIDERS } from 'model-bank';
 
 import type { AiProviderSelectItem } from '@/database/schemas';
 import { aiModels, aiProviders } from '@/database/schemas';
@@ -92,7 +93,7 @@ export class ProviderService extends BaseService {
         throw this.createAuthorizationError(permissionResult.message || '无权访问 Provider 列表');
       }
 
-      const conditions = [] as any[];
+      const conditions: (SQL | undefined)[] = [inArray(aiProviders.id, SUPPORTED_MODEL_PROVIDERS)];
 
       const permissionWhere = this.buildPermissionWhere(aiProviders, permissionResult.condition);
       if (permissionWhere) conditions.push(permissionWhere);
@@ -117,12 +118,13 @@ export class ProviderService extends BaseService {
       const { limit, offset } = processPaginationConditions(request);
 
       const [providers, totalResult] = await Promise.all([
-        this.db.query.aiProviders.findMany({
-          limit,
-          offset,
-          orderBy: [asc(aiProviders.sort), desc(aiProviders.updatedAt)],
-          where: whereCondition,
-        }),
+        this.db
+          .select()
+          .from(aiProviders)
+          .where(whereCondition)
+          .orderBy(asc(aiProviders.sort), desc(aiProviders.updatedAt))
+          .limit(limit)
+          .offset(offset),
         this.db.select({ count: count() }).from(aiProviders).where(whereCondition),
       ]);
 
@@ -148,6 +150,7 @@ export class ProviderService extends BaseService {
     });
 
     try {
+      assertModelProvider(request.id);
       const permissionResult = await this.resolveOperationPermission('AI_PROVIDER_READ', {
         targetProviderId: request.id,
       });
@@ -185,6 +188,7 @@ export class ProviderService extends BaseService {
     });
 
     try {
+      assertModelProvider(request.id);
       if (isOfficialProvider(request.id) && request.enabled === false) {
         throw this.createBusinessError(OFFICIAL_PROVIDER_DISABLE_ERROR);
       }
@@ -240,6 +244,7 @@ export class ProviderService extends BaseService {
     });
 
     try {
+      assertModelProvider(request.id);
       if (isOfficialProvider(request.id) && request.enabled === false) {
         throw this.createBusinessError(OFFICIAL_PROVIDER_DISABLE_ERROR);
       }
@@ -310,6 +315,7 @@ export class ProviderService extends BaseService {
     });
 
     try {
+      assertModelProvider(request.id);
       const permissionResult = await this.resolveOperationPermission('AI_PROVIDER_DELETE', {
         targetProviderId: request.id,
       });

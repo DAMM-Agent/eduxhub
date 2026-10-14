@@ -1,3 +1,5 @@
+import { isModelProvider } from 'model-bank/modelProvider';
+
 import type {
   DiscoverProviderDetail,
   IdentifiersResponse,
@@ -19,7 +21,9 @@ const providerList =
 const providerDetail =
   (queryKey?: string) =>
   (s: DiscoverStore): DiscoverProviderDetail | undefined =>
-    queryKey ? s.providerDetailMap[queryKey] : undefined;
+    queryKey && isModelProvider(s.providerDetailMap[queryKey]?.identifier ?? '')
+      ? s.providerDetailMap[queryKey]
+      : undefined;
 
 const providerIdentifiers =
   (queryKey?: string) =>

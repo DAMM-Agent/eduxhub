@@ -140,7 +140,7 @@ describe('AiProviderSlice (replica)', () => {
     });
 
     it('folds the response onto the flat list and flips initAiProviderList', async () => {
-      const list = [makeProvider('acme')];
+      const list = [makeProvider('openai')];
 
       renderHook(() => useStore.getState().useFetchAiProviderList());
       const [call] = await syncCalls('aiProviderList');
@@ -151,40 +151,40 @@ describe('AiProviderSlice (replica)', () => {
     });
 
     it('reflects an enable toggle in the list without waiting for the refresh', async () => {
-      useStore.setState({ aiProviderList: [makeProvider('acme')], initAiProviderList: true });
+      useStore.setState({ aiProviderList: [makeProvider('openai')], initAiProviderList: true });
 
-      await useStore.getState().toggleProviderEnabled('acme', false);
+      await useStore.getState().toggleProviderEnabled('openai', false);
 
       const { aiProviderService } = await import('@/services/aiProvider');
-      expect(aiProviderService.toggleProviderEnabled).toHaveBeenCalledWith('acme', false);
+      expect(aiProviderService.toggleProviderEnabled).toHaveBeenCalledWith('openai', false);
       expect(aiProviderSelectors.enabledAiProviderList(useStore.getState())).toHaveLength(0);
     });
   });
 
   describe('confirmed list writes', () => {
     it('persists a confirmed enable toggle even when the list refresh does not land', async () => {
-      await confirmList([makeProvider('acme'), makeProvider('other')]);
+      await confirmList([makeProvider('openai'), makeProvider('minimax')]);
 
       // The refresh is a no-op here (the SWR driver is a recorder), standing in
       // for a revalidation that fails after the server confirmed the toggle.
-      await useStore.getState().toggleProviderEnabled('acme', false);
+      await useStore.getState().toggleProviderEnabled('openai', false);
 
       await vi.waitFor(async () =>
         expect(await readPersistedList()).toEqual([
-          { ...makeProvider('acme'), enabled: false },
-          makeProvider('other'),
+          { ...makeProvider('openai'), enabled: false },
+          makeProvider('minimax'),
         ]),
       );
     });
 
     it('drops a deleted provider from the persisted list', async () => {
-      await confirmList([makeProvider('acme'), makeProvider('other')]);
+      await confirmList([makeProvider('openai'), makeProvider('minimax')]);
 
-      await useStore.getState().deleteAiProvider('acme');
+      await useStore.getState().deleteAiProvider('openai');
 
-      expect(useStore.getState().aiProviderList.map((item) => item.id)).toEqual(['other']);
+      expect(useStore.getState().aiProviderList.map((item) => item.id)).toEqual(['minimax']);
       await vi.waitFor(async () =>
-        expect(await readPersistedList()).toEqual([makeProvider('other')]),
+        expect(await readPersistedList()).toEqual([makeProvider('minimax')]),
       );
     });
   });

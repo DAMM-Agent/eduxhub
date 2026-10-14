@@ -1,6 +1,7 @@
 import { buildWorkspacePayload, buildWorkspaceWhere } from '@lobechat/database';
 import { and, eq, inArray, type SQL } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
+import { UnsupportedModelProviderError } from 'model-bank';
 
 import type { PERMISSION_ACTIONS } from '@/const/rbac';
 import { ALL_SCOPE } from '@/const/rbac';
@@ -133,6 +134,10 @@ export abstract class BaseService implements IBaseService {
    */
   protected handleServiceError(error: unknown, operation: string): never {
     this.log('error', `${operation} failed`, { error });
+
+    if (error instanceof UnsupportedModelProviderError) {
+      throw this.createValidationError(`UnsupportedProvider: ${error.message}`);
+    }
 
     // If it is a known business error, throw it directly
     if (

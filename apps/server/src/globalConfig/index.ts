@@ -1,9 +1,7 @@
 import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 import { parseToolNameMaxLength } from '@lobechat/const/plugin';
-import { ModelProvider } from 'model-bank';
 
 import { composioEnv } from '@/config/composio';
-import { isDesktop } from '@/const/version';
 import { appEnv, getAppConfig } from '@/envs/app';
 import { authEnv } from '@/envs/auth';
 import { fileEnv } from '@/envs/file';
@@ -26,7 +24,6 @@ import {
 import { parseAgentConfig } from './parseDefaultAgent';
 import { parseFilesConfig } from './parseFilesConfig';
 import { getPublicMemoryExtractionConfig } from './parseMemoryExtractionConfig';
-import { getServerFetchOnClientOverride } from './serverFetchOnClient';
 
 /**
  * Get Better-Auth SSO providers list
@@ -58,69 +55,10 @@ export const getServerGlobalConfig = async () => {
   const { DEFAULT_AGENT_CONFIG } = getAppConfig();
 
   const aiProviderSpecificConfig: Record<string, ProviderSpecificConfig> = {
-    azure: {
-      enabledKey: 'ENABLED_AZURE_OPENAI',
-      withDeploymentName: true,
-    },
-    azureai: {
-      withDeploymentName: true,
-    },
-    bedrock: {
-      enabledKey: 'ENABLED_AWS_BEDROCK',
-      modelListKey: 'AWS_BEDROCK_MODEL_LIST',
-    },
-    deepseek: {
-      enabled: true,
-    },
-    giteeai: {
-      enabledKey: 'ENABLED_GITEE_AI',
-      modelListKey: 'GITEE_AI_MODEL_LIST',
-    },
-    kimicodingplan: {
-      withDeploymentName: true,
-    },
-    lmstudio: {
-      fetchOnClient: getServerFetchOnClientOverride('lmstudio'),
-    },
-    ollama: {
-      enabled: isDesktop ? true : undefined,
-      fetchOnClient: getServerFetchOnClientOverride('ollama'),
-    },
-    ollamacloud: {
-      enabledKey: 'ENABLED_OLLAMA_CLOUD',
-    },
-    qwen: {
-      withDeploymentName: true,
-    },
-    spark: {
-      withDeploymentName: true,
-    },
-    tencentcloud: {
-      enabledKey: 'ENABLED_TENCENT_CLOUD',
-      modelListKey: 'TENCENT_CLOUD_MODEL_LIST',
-    },
-    unsloth: {
-      fetchOnClient: getServerFetchOnClientOverride('unsloth'),
-    },
-    volcengine: {
-      withDeploymentName: true,
-    },
-    volcenginecodingplan: {
-      withDeploymentName: true,
-    },
+    deepseek: { enabled: true },
+    qwen: { withDeploymentName: true },
+    volcengine: { withDeploymentName: true },
   };
-
-  // In business feature mode, keep the built-in provider as the only default-enabled
-  // provider while preserving provider-specific metadata such as fetch/model-list keys.
-  // Non-business builds keep the upstream defaults.
-  if (ENABLE_BUSINESS_FEATURES) {
-    for (const provider of Object.values(ModelProvider)) {
-      aiProviderSpecificConfig[provider] = {
-        ...aiProviderSpecificConfig[provider],
-        enabled: provider === ModelProvider.LobeHub,
-      };
-    }
-  }
 
   const config: GlobalServerConfig = {
     aiProvider: await genServerAiProvidersConfig(aiProviderSpecificConfig),

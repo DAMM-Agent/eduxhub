@@ -46,10 +46,11 @@ export const HOME_WIDGET_GROUPS = [
 export type HomeWidgetGroupKey = (typeof HOME_WIDGET_GROUPS)[number]['key'];
 
 export const HOME_CUSTOMIZE_DEFAULTS = {
-  hiddenHomeWidgets: [] as string[],
+  // Eduxwork：恢复默认时隐藏首页今日简报、用量与额度、推荐和目标板块。
+  hiddenHomeWidgets: ['news', 'usage', 'suggestions', 'goals'],
   homeRecentsCount: 8,
   homeTaskCount: 8,
-  showHomePortrait: true,
+  showHomePortrait: false,
 };
 
 export const HOME_COUNT_MIN = 3;

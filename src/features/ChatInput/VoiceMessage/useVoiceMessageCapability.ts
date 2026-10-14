@@ -1,9 +1,9 @@
-import { ModelProvider } from 'model-bank/modelProvider';
+import { isModelProvider, ModelProvider } from 'model-bank/modelProvider';
 
 import { useEffectiveAgentModePreference } from '@/features/ChatInput/hooks/effectiveAgentModePreference';
 import { getMultimodalUnderstandingMediaAbility } from '@/hooks/useMediaUploadAbility';
 import { getAiInfraStoreState, useAiInfraStore } from '@/store/aiInfra';
-import { aiModelSelectors, aiProviderSelectors } from '@/store/aiInfra/selectors';
+import { aiModelSelectors } from '@/store/aiInfra/selectors';
 import type { AiInfraStore } from '@/store/aiInfra/store';
 import {
   getServerConfigStoreState,
@@ -60,19 +60,10 @@ export const getVoiceMessageActionState = ({
 };
 
 interface RawAudioCapabilityInput {
-  isCuratedModel: boolean;
   modelSupportsAudio: boolean;
   provider: string;
   runtimeProvider: string;
 }
-
-const DIRECT_AUDIO_RUNTIMES = new Set<string>([
-  ModelProvider.Google,
-  ModelProvider.OpenAI,
-  ModelProvider.VertexAI,
-]);
-
-const CURATED_AUDIO_ROUTERS = new Set<string>([ModelProvider.AiHubMix]);
 
 interface MultimodalUnderstandingConfig {
   enabled: boolean;
@@ -103,22 +94,14 @@ const getMultimodalUnderstandingConfig = (): MultimodalUnderstandingConfig => {
 };
 
 export const supportsRawAudioMessage = ({
-  isCuratedModel,
   modelSupportsAudio,
   provider,
   runtimeProvider,
-}: RawAudioCapabilityInput) => {
-  if (!modelSupportsAudio) return false;
-
-  return (
-    DIRECT_AUDIO_RUNTIMES.has(runtimeProvider) ||
-    // LobeHub's enabled model list is curated by the server. The OSS model bank
-    // intentionally has no LobeHub cards, so requiring a duplicate builtin card
-    // would disable local Electron / Debug Proxy sessions connected to Cloud.
-    provider === ModelProvider.LobeHub ||
-    (isCuratedModel && CURATED_AUDIO_ROUTERS.has(provider))
-  );
-};
+}: RawAudioCapabilityInput) =>
+  modelSupportsAudio &&
+  isModelProvider(provider) &&
+  provider === runtimeProvider &&
+  runtimeProvider === ModelProvider.OpenAI;
 
 export const getVoiceMessageCapability = ({
   enableAgentMode,
@@ -128,23 +111,13 @@ export const getVoiceMessageCapability = ({
   provider,
   state = getAiInfraStoreState(),
 }: VoiceMessageCapabilityInput) => {
-  if (!model || !provider) return false;
+  if (!model || !provider || !isModelProvider(provider)) return false;
 
   const modelSupportsAudio = aiModelSelectors.isModelSupportAudio(model, provider)(state);
-  const isCuratedModel = state.builtinAiModelList.some(
-    (item) => item.id === model && item.providerId === provider,
-  );
-  const isBuiltinProvider = Object.values(ModelProvider).includes(provider as ModelProvider);
-  const runtimeProvider = isBuiltinProvider
-    ? provider
-    : aiProviderSelectors.providerConfigById(provider)(state)?.settings.sdkType ||
-      ModelProvider.OpenAI;
-
   const supportsDirectAudio = supportsRawAudioMessage({
-    isCuratedModel,
     modelSupportsAudio,
     provider,
-    runtimeProvider,
+    runtimeProvider: provider,
   });
   if (supportsDirectAudio) return true;
 
@@ -153,11 +126,14 @@ export const getVoiceMessageCapability = ({
 
   const fallbackModelId = multimodalUnderstanding.model;
   const fallbackProvider = multimodalUnderstanding.provider;
-  const fallbackConfigured = !!(fallbackModelId && fallbackProvider);
-  const fallbackModel =
-    fallbackModelId && fallbackProvider
-      ? aiModelSelectors.getEnabledModelById(fallbackModelId, fallbackProvider)(state)
-      : undefined;
+  const fallbackConfigured = !!(
+    fallbackModelId &&
+    fallbackProvider &&
+    isModelProvider(fallbackProvider)
+  );
+  const fallbackModel = fallbackConfigured
+    ? aiModelSelectors.getEnabledModelById(fallbackModelId, fallbackProvider)(state)
+    : undefined;
 
   return getMultimodalUnderstandingMediaAbility({
     enableMultimodalUnderstanding: multimodalUnderstanding.enabled,

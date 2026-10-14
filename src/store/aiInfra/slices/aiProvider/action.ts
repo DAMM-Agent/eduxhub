@@ -12,6 +12,7 @@ import type {
   Pricing,
 } from 'model-bank';
 import { isAiModelVisible } from 'model-bank/aiModel';
+import { isModelProvider } from 'model-bank/modelProvider';
 import { useLayoutEffect } from 'react';
 
 import {
@@ -84,8 +85,14 @@ export const resolveUserScopedBuiltinModelState = (
   const hiddenBuiltinModels = runtimeState.hiddenBuiltinModels ?? defaultHiddenBuiltinModels;
 
   return {
-    builtinAiModelList: filterHiddenBuiltinModels(allBuiltinAiModels, hiddenBuiltinModels),
-    enabledAiModels: filterHiddenBuiltinModels(runtimeState.enabledAiModels, hiddenBuiltinModels),
+    builtinAiModelList: filterHiddenBuiltinModels(
+      allBuiltinAiModels.filter((model) => isModelProvider(model.providerId)),
+      hiddenBuiltinModels,
+    ),
+    enabledAiModels: filterHiddenBuiltinModels(
+      runtimeState.enabledAiModels.filter((model) => isModelProvider(model.providerId)),
+      hiddenBuiltinModels,
+    ),
     hiddenBuiltinModels,
   };
 };
@@ -280,11 +287,13 @@ const buildProviderModelLists = async (
   ) => Promise<ProviderModelListItem[]>,
 ) => {
   return Promise.all(
-    providers.map(async (provider) => ({
-      ...provider,
-      children: await collector(enabledAiModels, provider.id),
-      name: provider.name || provider.id,
-    })),
+    providers
+      .filter((provider) => isModelProvider(provider.id))
+      .map(async (provider) => ({
+        ...provider,
+        children: await collector(enabledAiModels, provider.id),
+        name: provider.name || provider.id,
+      })),
   );
 };
 
@@ -501,7 +510,10 @@ const aiProviderListLens: ReplicaLens<AiInfraStore, AiProviderListItem[]> = {
   set: (_state, _key, data) =>
     data === undefined
       ? { aiProviderList: [], initAiProviderList: false }
-      : { aiProviderList: data, initAiProviderList: true },
+      : {
+          aiProviderList: data.filter((provider) => isModelProvider(provider.id)),
+          initAiProviderList: true,
+        },
 };
 
 /**
@@ -513,10 +525,12 @@ const projectRuntimeState = (
   state: AiInfraStore,
   data: AiProviderRuntimeStateView,
 ): Partial<AiInfraStore> => ({
-  aiProviderRuntimeConfig: data.runtimeConfig,
+  aiProviderRuntimeConfig: Object.fromEntries(
+    Object.entries(data.runtimeConfig).filter(([id]) => isModelProvider(id)),
+  ),
   builtinAiModelList: data.builtinAiModelList,
   enabledAiModels: data.enabledAiModels,
-  enabledAiProviders: data.enabledAiProviders,
+  enabledAiProviders: data.enabledAiProviders.filter((provider) => isModelProvider(provider.id)),
   enabledAsrModelList: data.enabledAsrModelList || [],
   enabledChatModelList: data.enabledChatModelList || [],
   enabledEmbeddingModelList: data.enabledEmbeddingModelList || [],

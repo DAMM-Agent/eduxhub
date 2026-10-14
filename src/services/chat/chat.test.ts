@@ -225,11 +225,11 @@ describe('ChatService', () => {
       await chatService.createAssistantMessage({
         model: 'gemini-3.1-flash-lite-image',
         messages,
-        provider: ModelProvider.LobeHub,
+        provider: 'lobehub',
         resolvedAgentConfig: createMockResolvedConfig({
           agentConfig: {
             model: 'gemini-3.1-flash-lite-image',
-            provider: ModelProvider.LobeHub,
+            provider: 'lobehub',
           },
           chatConfig: { enableAgentMode: true },
         }),
@@ -1754,7 +1754,7 @@ describe('ChatService', () => {
       );
 
       await chatService.getChatCompletion(
-        { messages: [], model: 'glm-5', provider: ModelProvider.OpenCodeCodingPlan },
+        { messages: [], model: 'glm-5', provider: 'opencodecodingplan' },
         { topicId: 'topic-browser' },
       );
 
@@ -1850,7 +1850,7 @@ describe('ChatService', () => {
           {
             config: { deploymentName: 'prod-gpt-54' },
             id: 'gpt-5.4',
-            providerId: ModelProvider.Azure,
+            providerId: 'azure',
           },
         ],
       } as any);
@@ -1858,7 +1858,7 @@ describe('ChatService', () => {
       const params: Partial<ChatStreamPayload> = {
         messages: [],
         model: 'gpt-5.4',
-        provider: ModelProvider.Azure,
+        provider: 'azure',
       };
 
       await chatService.getChatCompletion(params, {});

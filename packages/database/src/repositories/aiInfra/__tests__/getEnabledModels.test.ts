@@ -1108,7 +1108,7 @@ describe('AiInfraRepos', () => {
       const mockProviders = [
         {
           enabled: true,
-          id: 'custom-provider',
+          id: 'qwen',
           name: 'Custom Provider',
           source: 'custom' as const,
         },
@@ -1116,8 +1116,8 @@ describe('AiInfraRepos', () => {
 
       const mockAllModels = [
         {
-          id: 'newapi-model',
-          providerId: 'custom-provider',
+          id: 'user-model',
+          providerId: 'qwen',
           enabled: true,
           type: 'chat' as const,
           abilities: {},
@@ -1132,7 +1132,7 @@ describe('AiInfraRepos', () => {
       vi.spyOn(repo as any, 'fetchBuiltinModels').mockResolvedValue([]);
 
       const result = await repo.getEnabledModels();
-      const merged = result.find((m) => m.id === 'newapi-model');
+      const merged = result.find((m) => m.id === 'user-model');
       expect(merged).toBeDefined();
       expect(merged?.pricing).toEqual({
         units: [{ name: 'textInput', rate: 0.15, strategy: 'fixed', unit: 'millionTokens' }],

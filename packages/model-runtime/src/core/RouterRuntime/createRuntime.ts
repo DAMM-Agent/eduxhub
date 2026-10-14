@@ -1,7 +1,6 @@
 /**
  * @see https://github.com/lobehub/lobe-chat/discussions/6563
  */
-import type { GoogleGenAIOptions } from '@google/genai';
 import type {
   ChatModelCard,
   ModelPricingContext,
@@ -10,13 +9,12 @@ import type {
 import { AgentRuntimeErrorType } from '@lobechat/types';
 import { createTimingHelpers, getDurationMs } from '@lobechat/utils';
 import debug from 'debug';
+import { assertModelProvider, isModelProvider } from 'model-bank/modelProvider';
 import { nanoid } from 'nanoid';
 import type { ClientOptions } from 'openai';
 import type OpenAI from 'openai';
 import type { Stream } from 'openai/streaming';
 
-import { LobeOpenAI } from '../../providers/openai';
-import { LobeVertexAI } from '../../providers/vertexai';
 import type {
   ASROptions,
   ASRPayload,
@@ -41,10 +39,8 @@ import type {
   VideoPollingRoute,
 } from '../../types';
 import { AgentRuntimeError } from '../../utils/createError';
-import type { ModelIdMappingOptions } from '../../utils/modelIdMapping';
 import { postProcessModelList } from '../../utils/postProcessModelList';
 import { isImageDecodingRequestError, shouldStopFallbackForError } from '../../utils/routeFallback';
-import { safeParseJSON } from '../../utils/safeParseJSON';
 import { setRuntimeSignatureScopeSource } from '../../utils/signatureScope';
 import { createVideoWithCompletionMode } from '../../utils/videoCompletionMode';
 import type { LobeRuntimeAI } from '../BaseAI';
@@ -138,7 +134,7 @@ interface RouteAttemptContext {
   user?: string;
 }
 
-const RAW_AUDIO_API_TYPES = new Set<ApiType>(['google', 'openai', 'vertexai', 'xiaomimimo']);
+const RAW_AUDIO_API_TYPES = new Set<ApiType>(['openai']);
 
 const hasRawAudioInput = (payload: ChatStreamPayload) =>
   payload.messages.some(
@@ -567,53 +563,15 @@ export const createRouterRuntime = ({
         routerId: router.id ?? this._id,
       };
 
-      /**
-       * Vertex AI uses GoogleGenAI credentials flow rather than API keys.
-       * Accept JSON credentials in apiKey for compatibility with server config.
-       */
-      if (resolvedApiType === 'vertexai') {
-        const { apiKey, googleAuthOptions, project, location, ...restOptions } = finalOptions;
-        const credentials = safeParseJSON<Record<string, any>>(apiKey);
-        const vertexOptions: GoogleGenAIOptions & ModelIdMappingOptions = {
-          ...(restOptions as GoogleGenAIOptions),
-          vertexai: true,
-        };
-
-        if (googleAuthOptions) {
-          vertexOptions.googleAuthOptions = googleAuthOptions;
-        } else if (credentials) {
-          vertexOptions.googleAuthOptions = { credentials };
-        }
-
-        if (project) vertexOptions.project = project;
-        if (location) vertexOptions.location = location as GoogleGenAIOptions['location'];
-
-        if (this._id === 'lobehub') {
-          timing(
-            'createRuntimeFromOption done routerId=%s channelId=%s apiType=%s durationMs=%d vertex=true',
-            router.id,
-            channelId,
-            resolvedApiType,
-            getDurationMs(startedAt),
-          );
-        }
-
-        const runtime = LobeVertexAI.initFromVertexAI(vertexOptions);
-        setRuntimeSignatureScopeSource(runtime, signatureScopeSource);
-
-        return {
-          channelId,
-          id: resolvedApiType,
-          remark,
-          runtime,
-        };
-      }
-
       const { baseRuntimeMap } = await import('./baseRuntimeMap');
-      const providerAI =
-        resolvedApiType === router.apiType
-          ? (router.runtime ?? baseRuntimeMap[resolvedApiType] ?? LobeOpenAI)
-          : (baseRuntimeMap[resolvedApiType] ?? LobeOpenAI);
+      let providerAI = resolvedApiType === router.apiType ? router.runtime : undefined;
+      // Retained providers supply their own Anthropic-compatible implementation.
+      // There is no official Anthropic adapter or generic fallback to instantiate.
+      if (!(resolvedApiType === 'anthropic' && providerAI && isModelProvider(this._id))) {
+        assertModelProvider(resolvedApiType);
+        providerAI ??= baseRuntimeMap[resolvedApiType];
+      }
+      if (!providerAI) throw new Error('Missing provider runtime');
       const runtime: LobeRuntimeAI = new providerAI({ ...finalOptions, id: this._id });
       setRuntimeSignatureScopeSource(runtime, signatureScopeSource);
 

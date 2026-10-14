@@ -1,27 +1,11 @@
 import type { AiProviderRuntimeState } from '@lobechat/types';
 import type { EnabledAiModel } from 'model-bank';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getTestDB } from '../../../core/getTestDB';
-import type { LobeChatDatabase } from '../../../type';
 import { AiInfraRepos } from '../index';
-
-const userId = 'test-user-id';
-const mockProviderConfigs = {
-  openai: { enabled: true },
-  anthropic: { enabled: false },
-};
-
-let serverDB: LobeChatDatabase;
-let repo: AiInfraRepos;
-
-beforeAll(async () => {
-  serverDB = await getTestDB();
-}, 30000);
 
 beforeEach(() => {
   vi.clearAllMocks();
-  repo = new AiInfraRepos(serverDB, userId, mockProviderConfigs);
 });
 
 describe('AiInfraRepos', () => {
@@ -37,30 +21,30 @@ describe('AiInfraRepos', () => {
 
     it('prefers provider order when multiple providers have model', async () => {
       const runtimeState = createRuntimeState([
-        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'provider-b' },
-        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'provider-a' },
+        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'minimax' },
+        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'openai' },
       ]);
 
       const providerId = await AiInfraRepos.tryMatchingProviderFrom(runtimeState, {
         modelId: 'm-1',
-        preferredProviders: ['provider-b', 'provider-a'],
+        preferredProviders: ['minimax', 'openai'],
       });
 
-      expect(providerId).toBe('provider-b');
+      expect(providerId).toBe('minimax');
     });
 
     it('ignores disabled models when matching', async () => {
       const runtimeState = createRuntimeState([
-        { abilities: {}, enabled: false, id: 'm-1', type: 'chat', providerId: 'provider-disabled' },
-        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'provider-a' },
+        { abilities: {}, enabled: false, id: 'm-1', type: 'chat', providerId: 'moonshot' },
+        { abilities: {}, enabled: true, id: 'm-1', type: 'chat', providerId: 'openai' },
       ]);
 
       const providerId = await AiInfraRepos.tryMatchingProviderFrom(runtimeState, {
         modelId: 'm-1',
-        preferredProviders: ['provider-disabled', 'provider-a'],
+        preferredProviders: ['moonshot', 'openai'],
       });
 
-      expect(providerId).toBe('provider-a');
+      expect(providerId).toBe('openai');
     });
 
     it('falls back to provided fallback provider when no match', async () => {
@@ -69,10 +53,10 @@ describe('AiInfraRepos', () => {
 
       const providerId = await AiInfraRepos.tryMatchingProviderFrom(runtimeState, {
         modelId: 'm-1',
-        fallbackProvider: 'provider-fallback',
+        fallbackProvider: 'deepseek',
       });
 
-      expect(providerId).toBe('provider-fallback');
+      expect(providerId).toBe('deepseek');
       warnSpy.mockRestore();
     });
   });

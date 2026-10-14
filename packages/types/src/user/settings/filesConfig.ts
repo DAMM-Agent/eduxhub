@@ -5,5 +5,5 @@ export interface FilesConfigItem {
 export interface FilesConfig {
   embeddingModel: FilesConfigItem;
   queryMode: string;
-  rerankerModel: FilesConfigItem;
+  rerankerModel?: FilesConfigItem;
 }

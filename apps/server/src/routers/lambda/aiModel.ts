@@ -4,6 +4,7 @@ import {
   AiModelReasoningConfigSchema,
   AiModelTypeSchema,
   CreateAiModelSchema,
+  ModelProviderSchema,
   ToggleAiModelEnableSchema,
   UpdateAiModelSchema,
 } from 'model-bank';
@@ -76,7 +77,7 @@ export const aiModelRouter = router({
     .input(
       z.object({
         enabled: z.boolean(),
-        id: z.string(),
+        id: ModelProviderSchema,
         models: z.array(z.string()),
       }),
     )
@@ -87,7 +88,7 @@ export const aiModelRouter = router({
     .use(withScopedPermission('ai_model:update'))
     .input(
       z.object({
-        id: z.string(),
+        id: ModelProviderSchema,
         // TODO: Complete validation schema
         models: z.array(z.any()),
       }),
@@ -102,14 +103,14 @@ export const aiModelRouter = router({
   clearModelsByProvider: aiModelProcedure
     .use(withScopedPermission('ai_model:delete'))
     .use(requireWorkspaceRoleWhenScoped('admin'))
-    .input(z.object({ providerId: z.string() }))
+    .input(z.object({ providerId: ModelProviderSchema }))
     .mutation(async ({ input, ctx }) => {
       return ctx.aiModelModel.clearModelsByProvider(input.providerId);
     }),
   clearRemoteModels: aiModelProcedure
     .use(withScopedPermission('ai_model:delete'))
     .use(requireWorkspaceRoleWhenScoped('admin'))
-    .input(z.object({ providerId: z.string() }))
+    .input(z.object({ providerId: ModelProviderSchema }))
     .mutation(async ({ input, ctx }) => {
       return ctx.aiModelModel.clearRemoteModels(input.providerId);
     }),
@@ -160,7 +161,7 @@ export const aiModelRouter = router({
   // params for a model instance are keyed by userId + providerId + modelId and
   // shared across workspaces. See AiModelModel.getModelReasoningConfig.
   getAiModelReasoningConfig: aiModelProcedure
-    .input(z.object({ id: z.string(), providerId: z.string() }))
+    .input(z.object({ id: z.string(), providerId: ModelProviderSchema }))
     .query(async ({ input, ctx }) => {
       return await ctx.aiModelModel.getModelReasoningConfig(input.id, input.providerId);
     }),
@@ -169,7 +170,7 @@ export const aiModelRouter = router({
     .input(
       z.object({
         enabled: z.boolean().optional(),
-        id: z.string(),
+        id: ModelProviderSchema,
         limit: z.number().int().min(1).max(200).optional(),
         offset: z.number().int().min(0).optional(),
         type: z.string().optional(),
@@ -191,7 +192,7 @@ export const aiModelRouter = router({
   removeAiModel: aiModelProcedure
     .use(withScopedPermission('ai_model:delete'))
     .use(requireWorkspaceRoleWhenScoped('admin'))
-    .input(z.object({ id: z.string(), providerId: z.string() }))
+    .input(z.object({ id: z.string(), providerId: ModelProviderSchema }))
     .mutation(async ({ input, ctx }) => {
       return ctx.aiModelModel.delete(input.id, input.providerId);
     }),
@@ -208,7 +209,7 @@ export const aiModelRouter = router({
     .input(
       z.object({
         id: z.string(),
-        providerId: z.string(),
+        providerId: ModelProviderSchema,
         value: UpdateAiModelSchema,
       }),
     )
@@ -225,7 +226,7 @@ export const aiModelRouter = router({
     .input(
       z.object({
         id: z.string(),
-        providerId: z.string(),
+        providerId: ModelProviderSchema,
         value: AiModelReasoningConfigSchema,
       }),
     )
@@ -237,7 +238,7 @@ export const aiModelRouter = router({
     .use(withScopedPermission('ai_model:update'))
     .input(
       z.object({
-        providerId: z.string(),
+        providerId: ModelProviderSchema,
         sortMap: z.array(
           z.object({
             id: z.string(),

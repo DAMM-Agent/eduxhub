@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { and, eq, isNull } from 'drizzle-orm';
 import { ModelProvider } from 'model-bank';
+import { OpenAIProviderCard, QwenProviderCard } from 'model-bank/modelProviders';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sleep } from '@/utils/sleep';
@@ -37,8 +38,8 @@ describe('AiProviderModel', () => {
   describe('create', () => {
     it('should create a new ai provider', async () => {
       const params = {
-        name: 'AiHubMix',
-        id: 'aihubmix',
+        name: 'Qwen',
+        id: 'qwen',
         source: 'custom',
       } as const;
 
@@ -55,8 +56,8 @@ describe('AiProviderModel', () => {
   describe('delete', () => {
     it('should delete a ai provider by id', async () => {
       const { id } = await aiProviderModel.create({
-        name: 'AiHubMix',
-        id: 'aihubmix',
+        name: 'Qwen',
+        id: 'qwen',
         source: 'custom',
       });
 
@@ -70,8 +71,8 @@ describe('AiProviderModel', () => {
   });
   describe('deleteAll', () => {
     it('should delete all ai providers for the user', async () => {
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix' });
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix-2' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'qwen' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'zhipu' });
 
       await aiProviderModel.deleteAll();
 
@@ -81,12 +82,12 @@ describe('AiProviderModel', () => {
       expect(userGroups).toHaveLength(0);
     });
     it('should only delete ai providers for the user, not others', async () => {
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix' });
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix-2' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'qwen' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'zhipu' });
 
       const anotherAiProviderModel = new AiProviderModel(serverDB, 'user2');
       await anotherAiProviderModel.create({
-        id: 'aihubmix',
+        id: 'qwen',
         source: 'custom',
         name: 'Another provider',
       });
@@ -104,29 +105,29 @@ describe('AiProviderModel', () => {
 
   describe('query', () => {
     it('should query ai providers for the user', async () => {
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'qwen' });
       await sleep(10);
-      await aiProviderModel.create({ name: 'AiHubMix', source: 'custom', id: 'aihubmix-2' });
+      await aiProviderModel.create({ name: 'Qwen', source: 'custom', id: 'zhipu' });
 
       const userGroups = await aiProviderModel.query();
       expect(userGroups).toHaveLength(2);
-      expect(userGroups[0].id).toBe('aihubmix-2');
-      expect(userGroups[1].id).toBe('aihubmix');
+      expect(userGroups[0].id).toBe('zhipu');
+      expect(userGroups[1].id).toBe('qwen');
     });
   });
 
   describe('findById', () => {
     it('should find a ai provider by id', async () => {
       const { id } = await aiProviderModel.create({
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
-        id: 'aihubmix',
+        id: 'qwen',
       });
 
       const group = await aiProviderModel.findById(id);
       expect(group).toMatchObject({
         id,
-        name: 'AiHubMix',
+        name: 'Qwen',
         userId,
       });
     });
@@ -135,9 +136,9 @@ describe('AiProviderModel', () => {
   describe('update', () => {
     it('should update a ai provider', async () => {
       const { id } = await aiProviderModel.create({
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
-        id: 'aihubmix',
+        id: 'qwen',
       });
 
       await aiProviderModel.update(id, { name: 'Updated Test Group', sort: 3 });
@@ -157,14 +158,14 @@ describe('AiProviderModel', () => {
   describe('updateOrder', () => {
     it('should update order of ai providers', async () => {
       const group1 = await aiProviderModel.create({
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
-        id: 'aihubmix',
+        id: 'qwen',
       });
       const group2 = await aiProviderModel.create({
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
-        id: 'aihubmix-2',
+        id: 'zhipu',
       });
 
       await aiProviderModel.updateOrder([
@@ -189,9 +190,9 @@ describe('AiProviderModel', () => {
       await serverDB.insert(aiProviders).values({
         description: 'Test description',
         enabled: true,
-        id: 'aihubmix',
+        id: 'qwen',
         logo: 'test-logo',
-        name: 'AiHubMix',
+        name: 'Qwen',
         sort: 1,
         source: 'custom',
         userId,
@@ -202,9 +203,9 @@ describe('AiProviderModel', () => {
       expect(list[0]).toMatchObject({
         description: 'Test description',
         enabled: true,
-        id: 'aihubmix',
+        id: 'qwen',
         logo: 'test-logo',
-        name: 'AiHubMix',
+        name: 'Qwen',
         sort: 1,
         source: 'custom',
       });
@@ -221,7 +222,7 @@ describe('AiProviderModel', () => {
         },
         {
           enabled: true,
-          id: 'anthropic',
+          id: 'minimax',
           name: 'Workspace Anthropic',
           source: 'builtin',
           userId,
@@ -231,7 +232,7 @@ describe('AiProviderModel', () => {
 
       const list = await workspaceAiProviderModel.getAiProviderList();
 
-      expect(list.map((item) => item.id)).toEqual(['anthropic']);
+      expect(list.map((item) => item.id)).toEqual(['minimax']);
     });
 
     it('should write workspace provider toggles without updating personal providers', async () => {
@@ -266,11 +267,11 @@ describe('AiProviderModel', () => {
 
   describe('updateConfig', () => {
     it('should update provider config with encryption and merge keyVaults', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify({ key: 'value' }),
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -298,11 +299,11 @@ describe('AiProviderModel', () => {
     });
 
     it('should update provider config without encryption', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify({ key: 'value' }),
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -319,7 +320,7 @@ describe('AiProviderModel', () => {
     });
 
     it('should merge keyVaults with existing values when decryptor is provided', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       const existingKeyVaults = {
         apiKey: 'existing-api-key',
         oauthAccessToken: 'existing-oauth-token',
@@ -329,7 +330,7 @@ describe('AiProviderModel', () => {
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify(existingKeyVaults),
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -362,7 +363,7 @@ describe('AiProviderModel', () => {
     });
 
     it('should preserve OAuth tokens when updating non-OAuth fields', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       const existingKeyVaults = {
         bearerToken: 'copilot-bearer-token',
         bearerTokenExpiresAt: '1700000000000',
@@ -372,7 +373,7 @@ describe('AiProviderModel', () => {
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify(existingKeyVaults),
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -403,12 +404,12 @@ describe('AiProviderModel', () => {
     });
 
     it('should handle decryption errors gracefully and use new values only', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
 
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: 'invalid-encrypted-data',
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -435,7 +436,7 @@ describe('AiProviderModel', () => {
     });
 
     it('should allow clearing OAuth tokens explicitly', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       const existingKeyVaults = {
         apiKey: 'api-key',
         bearerToken: 'bearer-token',
@@ -445,7 +446,7 @@ describe('AiProviderModel', () => {
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify(existingKeyVaults),
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -493,28 +494,22 @@ describe('AiProviderModel', () => {
       expect(provider?.source).toBe('builtin');
     });
 
-    it('should toggle custom provider enabled status', async () => {
-      const customId = 'custom-provider';
-      await aiProviderModel.toggleProviderEnabled(customId, false);
-
-      const provider = await serverDB.query.aiProviders.findFirst({
-        where: eq(aiProviders.id, customId),
-      });
-
-      expect(provider?.enabled).toBe(false);
-      expect(provider?.source).toBe('custom');
+    it('rejects activation of an arbitrary provider id', async () => {
+      await expect(aiProviderModel.toggleProviderEnabled('custom-provider', true)).rejects.toThrow(
+        'no longer supported',
+      );
     });
   });
 
   describe('getAiProviderById', () => {
     it('should get provider details with decryption', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       const mockDecryptor = vi.fn().mockResolvedValue({ decryptedKey: 'value' });
 
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: JSON.stringify({ key: 'value' }),
-        name: 'AiHubMix',
+        name: 'Qwen',
         settings: { setting1: true } as any,
         source: 'custom',
         userId,
@@ -536,19 +531,17 @@ describe('AiProviderModel', () => {
       expect(provider?.source).toBe('builtin');
     });
 
-    it('should return undefined for non-existent custom provider', async () => {
-      const provider = await aiProviderModel.getAiProviderById('non-existent', (text) =>
-        JSON.parse(text as string),
+    it('rejects a non-existent provider before lookup', async () => {
+      await expect(aiProviderModel.getAiProviderById('non-existent')).rejects.toThrow(
+        'no longer supported',
       );
-
-      expect(provider).toBeUndefined();
     });
 
     it('should handle null keyVaults', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       await serverDB.insert(aiProviders).values({
         id: providerId,
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -561,11 +554,11 @@ describe('AiProviderModel', () => {
     });
 
     it('should handle keyVaults decryption failure gracefully', async () => {
-      const providerId = 'aihubmix';
+      const providerId = 'qwen';
       await serverDB.insert(aiProviders).values({
         id: providerId,
         keyVaults: 'invalid-encrypted-data',
-        name: 'AiHubMix',
+        name: 'Qwen',
         source: 'custom',
         userId,
       });
@@ -589,7 +582,7 @@ describe('AiProviderModel', () => {
       await serverDB.insert(aiProviders).values([
         {
           fetchOnClient: true,
-          id: 'provider1',
+          id: 'openai',
           keyVaults: JSON.stringify({ key: 'value' }),
           name: 'Provider 1',
           settings: { setting1: true } as any,
@@ -597,7 +590,7 @@ describe('AiProviderModel', () => {
           userId,
         },
         {
-          id: 'provider2',
+          id: 'qwen',
           name: 'Provider 2',
           source: 'custom',
           userId,
@@ -606,18 +599,18 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig(mockDecryptor);
 
-      expect(config.provider1).toEqual({
+      expect(config.openai).toEqual({
         config: {},
         fetchOnClient: true,
         keyVaults: { decryptedKey: 'value' },
-        settings: { setting1: true },
+        settings: { ...OpenAIProviderCard.settings, setting1: true },
       });
 
-      expect(config.provider2).toEqual({
+      expect(config.qwen).toEqual({
         config: {},
         fetchOnClient: undefined,
         keyVaults: {},
-        settings: {},
+        settings: QwenProviderCard.settings,
       });
     });
 
@@ -627,7 +620,7 @@ describe('AiProviderModel', () => {
       });
 
       await serverDB.insert(aiProviders).values({
-        id: 'provider-with-bad-keys',
+        id: 'openai',
         keyVaults: 'invalid-encrypted-data',
         name: 'Bad Provider',
         source: 'custom',
@@ -636,13 +629,13 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig(failingDecryptor);
 
-      expect(config['provider-with-bad-keys'].keyVaults).toEqual({});
+      expect(config['openai'].keyVaults).toEqual({});
       expect(failingDecryptor).toHaveBeenCalled();
     });
 
     it('should handle null keyVaults gracefully', async () => {
       await serverDB.insert(aiProviders).values({
-        id: 'provider-no-keys',
+        id: 'openai',
         keyVaults: null,
         name: 'No Keys Provider',
         source: 'custom',
@@ -651,27 +644,27 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig();
 
-      expect(config['provider-no-keys'].keyVaults).toEqual({});
+      expect(config['openai'].keyVaults).toEqual({});
     });
 
     it('should respect fetchOnClient property', async () => {
       await serverDB.insert(aiProviders).values([
         {
           fetchOnClient: true,
-          id: 'client-provider',
+          id: 'openai',
           name: 'Client Provider',
           source: 'custom',
           userId,
         },
         {
           fetchOnClient: false,
-          id: 'server-provider',
+          id: 'qwen',
           name: 'Server Provider',
           source: 'custom',
           userId,
         },
         {
-          id: 'undefined-provider',
+          id: 'minimax',
           name: 'Undefined Provider',
           source: 'custom',
           userId,
@@ -680,14 +673,14 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig();
 
-      expect(config['client-provider'].fetchOnClient).toBe(true);
-      expect(config['server-provider'].fetchOnClient).toBe(false);
-      expect(config['undefined-provider'].fetchOnClient).toBeUndefined();
+      expect(config['openai'].fetchOnClient).toBe(true);
+      expect(config['qwen'].fetchOnClient).toBe(false);
+      expect(config['minimax'].fetchOnClient).toBeUndefined();
     });
 
-    it('should use empty object as default for settings', async () => {
+    it('should use builtin settings when no override is saved', async () => {
       await serverDB.insert(aiProviders).values({
-        id: 'no-settings-provider',
+        id: 'qwen',
         name: 'No Settings Provider',
         settings: null as any,
         source: 'custom',
@@ -696,19 +689,19 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig();
 
-      expect(config['no-settings-provider'].settings).toEqual({});
+      expect(config['qwen'].settings).toEqual(QwenProviderCard.settings);
     });
 
     it('should only include providers for the current user', async () => {
       await serverDB.insert(aiProviders).values([
         {
-          id: 'user1-provider',
+          id: 'openai',
           name: 'User 1 Provider',
           source: 'custom',
           userId,
         },
         {
-          id: 'user2-provider',
+          id: 'qwen',
           name: 'User 2 Provider',
           source: 'custom',
           userId: 'user2',
@@ -717,8 +710,8 @@ describe('AiProviderModel', () => {
 
       const config = await aiProviderModel.getAiProviderRuntimeConfig();
 
-      expect(config['user1-provider']).toBeDefined();
-      expect(config['user2-provider']).toBeUndefined();
+      expect(config['openai']).toBeDefined();
+      expect(config['qwen']).toBeUndefined();
     });
   });
 });

@@ -363,6 +363,7 @@ describe('messageRuntime', () => {
     });
   });
 
+  /*
   describe('Discord adapter', () => {
     it('should send a message via Discord', async () => {
       mockProviderFor('discord', { botToken: 'discord-token' });
@@ -405,6 +406,7 @@ describe('messageRuntime', () => {
       expect(result.state.messages[0].author.name).toBe('alice');
     });
   });
+  */
 
   describe('Telegram adapter', () => {
     it('should send a message via Telegram', async () => {
@@ -440,6 +442,7 @@ describe('messageRuntime', () => {
     });
   });
 
+  /*
   describe('Slack adapter', () => {
     it('should send a message via Slack', async () => {
       mockProviderFor('slack', { botToken: 'slack-token' });
@@ -460,6 +463,7 @@ describe('messageRuntime', () => {
       });
     });
   });
+  */
 
   describe('Feishu adapter', () => {
     it('should send a message via Feishu', async () => {
@@ -503,6 +507,7 @@ describe('messageRuntime', () => {
       });
     });
 
+    /*
     it('reports readDocument as unsupported on a platform without a document API', async () => {
       mockProviderFor('discord', { botToken: 'discord-token' });
 
@@ -515,8 +520,10 @@ describe('messageRuntime', () => {
       expect(result.success).toBe(false);
       expect(result.content).toContain('not supported on discord');
     });
+    */
   });
 
+  /*
   describe('QQ adapter', () => {
     it('should send a message via QQ', async () => {
       mockProviderFor('qq', { appSecret: 'qq-secret' });
@@ -552,6 +559,7 @@ describe('messageRuntime', () => {
       expect(result.content).toContain('not supported on QQ');
     });
   });
+  */
 
   describe('Telegram env-config fallback', () => {
     it('should fall back to env-backed config when no per-agent provider exists', async () => {
@@ -595,6 +603,7 @@ describe('messageRuntime', () => {
   });
 
   describe('dispatcher error handling', () => {
+    /*
     it('should return error for unconfigured platform', async () => {
       mockQuery.mockResolvedValue([]);
 
@@ -608,6 +617,7 @@ describe('messageRuntime', () => {
       expect(result.success).toBe(false);
       expect(result.content).toContain('No enabled discord bot provider found');
     });
+    */
 
     it('should return error for unregistered platform', async () => {
       const runtime = await messageRuntime.factory(validContext);
@@ -810,6 +820,7 @@ describe('messageRuntime', () => {
       expect(wechatClientTokens).toEqual([]);
     });
 
+    /*
     it('keeps platform routing for a platform other than the conversation’s', async () => {
       mockTopicFindById.mockResolvedValue({
         metadata: {
@@ -834,6 +845,7 @@ describe('messageRuntime', () => {
       expect(result.success).toBe(true);
       expect(mockResolveByKey).not.toHaveBeenCalled();
     });
+    */
   });
 
   // ==================== System Bot management () ====================

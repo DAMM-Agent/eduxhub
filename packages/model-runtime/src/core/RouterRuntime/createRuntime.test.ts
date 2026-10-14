@@ -1,7 +1,6 @@
 import { AgentRuntimeErrorType, RequestTrigger } from '@lobechat/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { LobeVertexAI } from '../../providers/vertexai';
 import type { ChatMethodOptions, OnFinishData } from '../../types';
 import type { ModelRuntimeDiagnostics } from '../../types/providerDiagnostics';
 import { getRuntimeSignatureScopeSource } from '../../utils/signatureScope';
@@ -22,7 +21,7 @@ describe('createRouterRuntime', () => {
   describe('initialization', () => {
     it('should throw NoAvailableProvider error when routers array is empty', async () => {
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [],
       });
       const runtime = new Runtime();
@@ -33,7 +32,7 @@ describe('createRouterRuntime', () => {
       ).rejects.toMatchObject({
         error: { message: 'empty providers' },
         errorType: AgentRuntimeErrorType.NoAvailableProvider,
-        provider: 'test-runtime',
+        provider: 'minimax',
       });
     });
 
@@ -46,7 +45,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -78,7 +77,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -99,13 +98,13 @@ describe('createRouterRuntime', () => {
         expect.objectContaining({
           baseURL: 'https://api.example.com',
           apiKey: 'constructor-key',
-          id: 'test-runtime',
+          id: 'minimax',
         }),
       );
       expect(signatureScopeSource).toEqual({
         apiType: 'openai',
         channelId: 'channel-a',
-        provider: 'test-runtime',
+        provider: 'minimax',
         routerId: 'router-a',
       });
     });
@@ -120,7 +119,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -343,7 +342,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -376,7 +375,7 @@ describe('createRouterRuntime', () => {
       });
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         chatCompletion: {
           handleError,
         },
@@ -411,7 +410,7 @@ describe('createRouterRuntime', () => {
       const handleError = vi.fn().mockReturnValue(undefined);
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -443,7 +442,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -473,7 +472,7 @@ describe('createRouterRuntime', () => {
 
       const models = vi.fn().mockResolvedValue([]);
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         models,
         routers: [
           {
@@ -512,7 +511,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -542,7 +541,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -592,7 +591,7 @@ describe('createRouterRuntime', () => {
       ]);
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: dynamicRoutersFunction,
       });
 
@@ -693,7 +692,7 @@ describe('createRouterRuntime', () => {
           },
         ]);
         const Runtime = createRouterRuntime({
-          id: 'test-runtime',
+          id: 'minimax',
           routers: dynamicRoutersFunction,
         });
         const pricingContext = { plan: 'premium', scope: 'personal' } as const;
@@ -711,7 +710,7 @@ describe('createRouterRuntime', () => {
       const emptyRoutersFunction = () => [];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: emptyRoutersFunction,
       });
       const runtime = new Runtime();
@@ -722,7 +721,7 @@ describe('createRouterRuntime', () => {
       ).rejects.toMatchObject({
         error: { message: 'empty providers' },
         errorType: AgentRuntimeErrorType.NoAvailableProvider,
-        provider: 'test-runtime',
+        provider: 'minimax',
       });
     });
 
@@ -743,7 +742,7 @@ describe('createRouterRuntime', () => {
       ]);
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: asyncRoutersFunction,
       });
 
@@ -936,7 +935,7 @@ describe('createRouterRuntime', () => {
         requestSettled = settled;
       });
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: finished,
         routers: [
@@ -975,7 +974,7 @@ describe('createRouterRuntime', () => {
           createChatResponse(options, { final: { text: 'answer' }, text: 'answer' });
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         onRouteSuccess,
         routers: [{ apiType: 'openai', models: ['gpt-4'], options: {}, runtime: MockRuntime }],
@@ -1005,7 +1004,7 @@ describe('createRouterRuntime', () => {
         chat = async () => new Response(new ReadableStream());
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         routers: [{ apiType: 'openai', models: ['gpt-4'], options: {}, runtime: MockRuntime }],
         scheduleRouteRequestSettled: (settled) => {
@@ -1028,7 +1027,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: vi.fn(),
         routers: [
@@ -1056,7 +1055,7 @@ describe('createRouterRuntime', () => {
           createChatResponse(options, { final: { text: 'answer' }, text: 'answer' });
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: finished,
         routers: [{ apiType: 'openai', models: ['gpt-4'], options: {}, runtime: MockRuntime }],
@@ -1093,7 +1092,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: finished,
         routers: [
@@ -1130,7 +1129,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1151,7 +1150,7 @@ describe('createRouterRuntime', () => {
           createChatResponse(options, { text: 'partial' });
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1190,7 +1189,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1217,7 +1216,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: finished,
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1262,7 +1261,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: finished,
         routers: [
@@ -1299,7 +1298,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: finished,
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1332,7 +1331,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttemptFinished: vi.fn(),
         routers: [
           { apiType: 'openai', models: ['gpt-4'], options: [{}, {}], runtime: MockRuntime },
@@ -1390,7 +1389,7 @@ describe('createRouterRuntime', () => {
         };
       }
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt: returned,
         onRouteAttemptFinished: finished,
         routers: [
@@ -1428,81 +1427,56 @@ describe('createRouterRuntime', () => {
       expect(finished.mock.calls[2][0].requestId).not.toBe(second.requestId);
     });
 
-    it('should only use raw-audio-compatible routes for audio messages', async () => {
+    it('only sends raw audio through a retained OpenAI route', async () => {
       const attemptedRoutes: string[] = [];
-
-      class CompatibleRuntime implements LobeRuntimeAI {
+      class AudioRuntime implements LobeRuntimeAI {
         private readonly apiKey: string;
-
-        constructor(options: any) {
+        constructor(options: { apiKey: string }) {
           this.apiKey = options.apiKey;
         }
-
-        chat = vi.fn().mockImplementation(async () => {
+        chat = vi.fn(async () => {
           attemptedRoutes.push(this.apiKey);
-          throw new Error(`${this.apiKey} failed`);
+          return new Response('audio-response');
         });
       }
-
-      vi.doMock('./baseRuntimeMap', () => ({
-        baseRuntimeMap: {
-          google: CompatibleRuntime,
-          openai: CompatibleRuntime,
-          xiaomimimo: CompatibleRuntime,
-        },
-      }));
-
-      const vertexChat = vi.fn().mockImplementation(async () => {
-        attemptedRoutes.push('vertexai');
-        return 'vertex-response';
-      });
-      vi.spyOn(LobeVertexAI, 'initFromVertexAI').mockReturnValue({ chat: vertexChat } as any);
-
+      vi.doMock('./baseRuntimeMap', () => ({ baseRuntimeMap: { openai: AudioRuntime } }));
       const unsupportedChat = vi.fn();
-
       class UnsupportedRuntime implements LobeRuntimeAI {
         chat = unsupportedChat;
       }
-
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'anthropic',
             models: ['audio-model'],
+            runtime: UnsupportedRuntime,
             options: [
-              { apiKey: 'anthropic-key', apiType: 'anthropic' },
-              { apiKey: 'google-key', apiType: 'google' },
-              { apiKey: 'xai-key', apiType: 'xai' },
+              { apiKey: 'minimax-key', apiType: 'anthropic' },
+              { apiKey: 'qwen-key', apiType: 'qwen' },
               { apiKey: 'openai-key', apiType: 'openai' },
-              { apiKey: 'xiaomi-key', apiType: 'xiaomimimo' },
-              { apiKey: 'vertex-key', apiType: 'vertexai' },
+              { apiKey: 'zhipu-key', apiType: 'zhipu' },
             ],
-            runtime: UnsupportedRuntime as any,
           },
         ],
       });
-
-      const runtime = new Runtime();
-      const result = await runtime.chat({
+      const response = await new Runtime().chat({
+        model: 'audio-model',
         messages: [
           {
+            role: 'user',
             content: [
               {
-                audio_url: { mimeType: 'audio/wav', url: 'https://example.com/voice.wav' },
                 type: 'audio_url',
+                audio_url: { mimeType: 'audio/wav', url: 'https://example.com/voice.wav' },
               },
             ],
-            role: 'user',
           },
         ],
-        model: 'audio-model',
       });
-
-      expect(result).toBe('vertex-response');
-      expect(attemptedRoutes).toEqual(['google-key', 'openai-key', 'xiaomi-key', 'vertexai']);
+      expect(await response.text()).toBe('audio-response');
+      expect(attemptedRoutes).toEqual(['openai-key']);
       expect(unsupportedChat).not.toHaveBeenCalled();
-      expect(vertexChat).toHaveBeenCalledTimes(1);
     });
 
     it('should fail closed when no route supports raw audio input', async () => {
@@ -1513,14 +1487,14 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'anthropic',
             models: ['audio-model'],
             options: [
               { apiKey: 'anthropic-key', apiType: 'anthropic' },
-              { apiKey: 'xai-key', apiType: 'xai' },
+              { apiKey: 'qwen-key', apiType: 'qwen' },
             ],
             runtime: UnsupportedRuntime as any,
           },
@@ -1566,7 +1540,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'anthropic',
@@ -1596,7 +1570,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1646,7 +1620,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1707,7 +1681,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1725,7 +1699,7 @@ describe('createRouterRuntime', () => {
 
     it('should throw error when options array is empty', async () => {
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1760,7 +1734,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1802,7 +1776,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1835,7 +1809,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -1872,7 +1846,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt,
         routers: [
           {
@@ -1918,7 +1892,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt,
         routers: [
           {
@@ -1964,7 +1938,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2005,7 +1979,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2044,7 +2018,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2089,7 +2063,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2124,7 +2098,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2154,7 +2128,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2188,7 +2162,7 @@ describe('createRouterRuntime', () => {
         }
 
         const Runtime = createRouterRuntime({
-          id: 'test-runtime',
+          id: 'minimax',
           routers: [
             {
               apiType: 'anthropic',
@@ -2232,7 +2206,7 @@ describe('createRouterRuntime', () => {
         }
 
         const Runtime = createRouterRuntime({
-          id: 'test-runtime',
+          id: 'minimax',
           routers: [
             {
               apiType: 'anthropic',
@@ -2278,7 +2252,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2321,7 +2295,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2360,7 +2334,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2390,7 +2364,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt,
         routers: [
           {
@@ -2427,7 +2401,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2456,7 +2430,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2486,7 +2460,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt,
         routers: [
           {
@@ -2524,7 +2498,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2554,15 +2528,15 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: async (_, { model }) => {
-          if (model !== 'gemini-omni-1.1-flash') {
+          if (model !== 'doubao-seedance-2-0-260128') {
             throw new Error('unexpected model');
           }
 
           return [
             {
-              apiType: 'google',
+              apiType: 'volcengine',
               models: [model],
               options: {},
               runtime: MockRuntime as any,
@@ -2574,7 +2548,7 @@ describe('createRouterRuntime', () => {
       const runtime = new Runtime();
 
       await expect(
-        runtime.handlePollVideoStatus('interaction-1', 'gemini-omni-1.1-flash'),
+        runtime.handlePollVideoStatus('interaction-1', 'doubao-seedance-2-0-260128'),
       ).resolves.toMatchObject({ status: 'success' });
     });
 
@@ -2603,12 +2577,12 @@ describe('createRouterRuntime', () => {
         id: 'lobehub',
         routers: [
           {
-            apiType: 'google',
-            id: 'google-router',
-            models: ['gemini-omni-1.1-flash'],
+            apiType: 'volcengine',
+            id: 'volcengine-router',
+            models: ['doubao-seedance-2-0-260128'],
             options: [
-              { apiKey: 'key-1', id: 'google-channel-1' },
-              { apiKey: 'key-2', id: 'google-channel-2' },
+              { apiKey: 'key-1', id: 'volcengine-channel-1' },
+              { apiKey: 'key-2', id: 'volcengine-channel-2' },
             ],
             runtime: MockRuntime as any,
           },
@@ -2619,14 +2593,14 @@ describe('createRouterRuntime', () => {
       const metadata: Record<string, unknown> = { trigger: RequestTrigger.Video };
 
       await runtime.createVideo(
-        { model: 'gemini-omni-1.1-flash', params: { prompt: 'a cat' } } as any,
+        { model: 'doubao-seedance-2-0-260128', params: { prompt: 'a cat' } } as any,
         { metadata },
       );
 
       await expect(
         runtime.handlePollVideoStatus(
           'interaction-1',
-          'gemini-omni-1.1-flash',
+          'doubao-seedance-2-0-260128',
           metadata.routeAttempt as any,
         ),
       ).resolves.toEqual({
@@ -2658,12 +2632,12 @@ describe('createRouterRuntime', () => {
         id: 'lobehub',
         routers: [
           {
-            apiType: 'google',
-            id: 'google-router',
-            models: ['gemini-omni-1.1-flash'],
+            apiType: 'volcengine',
+            id: 'volcengine-router',
+            models: ['doubao-seedance-2-0-260128'],
             options: [
-              { apiKey: 'key-1', id: 'google-channel-1' },
-              { apiKey: 'key-2', id: 'google-channel-2' },
+              { apiKey: 'key-1', id: 'volcengine-channel-1' },
+              { apiKey: 'key-2', id: 'volcengine-channel-2' },
             ],
             runtime: MockRuntime as any,
           },
@@ -2672,11 +2646,15 @@ describe('createRouterRuntime', () => {
 
       const runtime = new Runtime({ userId: 'user-1' });
       const payload = {
-        model: 'gemini-omni-1.1-flash',
+        model: 'doubao-seedance-2-0-260128',
         params: { prompt: 'slower' },
         previousInteractionId: 'interaction-1',
       } as any;
-      const route = { apiType: 'google', channelId: 'google-channel-2', routerId: 'google-router' };
+      const route = {
+        apiType: 'volcengine',
+        channelId: 'volcengine-channel-2',
+        routerId: 'volcengine-router',
+      };
 
       await expect(runtime.createVideo(payload, { route })).rejects.toThrow(
         'interaction not found',
@@ -2684,7 +2662,7 @@ describe('createRouterRuntime', () => {
       expect(usedKeys).toEqual(['key-2']);
 
       await expect(
-        runtime.createVideo(payload, { route: { ...route, channelId: 'google-channel-9' } }),
+        runtime.createVideo(payload, { route: { ...route, channelId: 'volcengine-channel-9' } }),
       ).rejects.toThrow('The video generation channel is no longer available');
       expect(usedKeys).toEqual(['key-2']);
     });
@@ -2698,15 +2676,15 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: async (_, { model }) => {
-          if (model !== 'gemini-omni-1.1-flash') {
+          if (model !== 'doubao-seedance-2-0-260128') {
             throw new Error('unexpected model');
           }
 
           return [
             {
-              apiType: 'google',
+              apiType: 'volcengine',
               models: [model],
               options: {},
               runtime: MockRuntime as any,
@@ -2720,7 +2698,7 @@ describe('createRouterRuntime', () => {
       await expect(
         runtime.handleCreateVideoWebhook({
           body: { type: 'interaction.completed' },
-          model: 'gemini-omni-1.1-flash',
+          model: 'doubao-seedance-2-0-260128',
         }),
       ).resolves.toMatchObject({ status: 'completed' });
     });
@@ -2735,7 +2713,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2764,7 +2742,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteAttempt,
         routers: [
           {
@@ -2799,7 +2777,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2832,7 +2810,7 @@ describe('createRouterRuntime', () => {
       }
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         apiKey: 'default-api-key',
         routers: [
           {
@@ -2915,7 +2893,7 @@ describe('createRouterRuntime', () => {
       const sortRouterOptions = vi.fn().mockImplementation(({ options }) => [...options].reverse());
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2952,7 +2930,7 @@ describe('createRouterRuntime', () => {
     it('passes the runtime user and request metadata to channel selection', async () => {
       const sortRouterOptions = vi.fn(({ options }) => options);
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -2988,7 +2966,7 @@ describe('createRouterRuntime', () => {
           }),
       );
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         onRouteSuccess,
         routers: [
           {
@@ -3038,7 +3016,7 @@ describe('createRouterRuntime', () => {
       const attemptedKeys: string[] = [];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -3060,7 +3038,7 @@ describe('createRouterRuntime', () => {
       const attemptedKeys: string[] = [];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -3084,7 +3062,7 @@ describe('createRouterRuntime', () => {
       const attemptedKeys: string[] = [];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -3111,7 +3089,7 @@ describe('createRouterRuntime', () => {
       ];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -3137,7 +3115,7 @@ describe('createRouterRuntime', () => {
       const attemptedKeys: string[] = [];
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',
@@ -3164,7 +3142,7 @@ describe('createRouterRuntime', () => {
       const sortRouterOptions = vi.fn();
 
       const Runtime = createRouterRuntime({
-        id: 'test-runtime',
+        id: 'minimax',
         routers: [
           {
             apiType: 'openai',

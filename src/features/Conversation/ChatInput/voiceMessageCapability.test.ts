@@ -1,5 +1,4 @@
 import { act, renderHook } from '@testing-library/react';
-import { ModelProvider } from 'model-bank/modelProvider';
 import { createElement, type PropsWithChildren } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,7 +28,7 @@ const multimodalServerConfig = {
   enableMultimodalUnderstanding: true,
   multimodalUnderstanding: {
     model: 'fallback-audio-model',
-    provider: ModelProvider.LobeHub,
+    provider: 'deepseek',
   },
   telemetry: {},
 };
@@ -67,19 +66,19 @@ describe('canSendVoiceMessage', () => {
       abilities: { audio: true },
       enabled: true,
       id: 'gemini-audio',
-      providerId: ModelProvider.Google,
+      providerId: 'openai',
       type: 'chat',
     } as const;
     const textModel = {
       abilities: {},
       enabled: true,
       id: 'text-only',
-      providerId: ModelProvider.Google,
+      providerId: 'openai',
       type: 'chat',
     } as const;
     useAgentStore.setState({
       agentMap: {
-        [agentId]: { chatConfig: {}, model: audioModel.id, provider: ModelProvider.Google },
+        [agentId]: { chatConfig: {}, model: audioModel.id, provider: 'openai' },
       },
     } as any);
     useAiInfraStore.setState({ enabledAiModels: [audioModel, textModel] });
@@ -89,7 +88,7 @@ describe('canSendVoiceMessage', () => {
       activeTopicId: 'another-topic',
       topicDataMap: {
         [`agent_${agentId}`]: {
-          items: [{ id: topicId, model: audioModel.id, provider: ModelProvider.Google }],
+          items: [{ id: topicId, model: audioModel.id, provider: 'openai' }],
         },
       },
     } as any);
@@ -100,7 +99,7 @@ describe('canSendVoiceMessage', () => {
     useChatStore.setState({
       topicDataMap: {
         [`agent_${agentId}`]: {
-          items: [{ id: topicId, model: textModel.id, provider: ModelProvider.Google }],
+          items: [{ id: topicId, model: textModel.id, provider: 'openai' }],
         },
       },
     } as any);
@@ -114,14 +113,14 @@ describe('canSendVoiceMessage', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'deepseek-v4-pro',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     const fallbackModel = {
       abilities: { audio: true },
       enabled: true,
       id: 'fallback-audio-model',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     useAgentStore.setState({
@@ -129,7 +128,7 @@ describe('canSendVoiceMessage', () => {
         [agentId]: {
           chatConfig: { enableAgentMode: true },
           model: primaryModel.id,
-          provider: ModelProvider.LobeHub,
+          provider: 'deepseek',
           userId: 'user-author',
           visibility: 'public',
           workspaceId: 'workspace-1',
@@ -167,7 +166,7 @@ describe('heterogeneous agents', () => {
     abilities: {},
     enabled: true,
     id: 'text-only',
-    providerId: ModelProvider.Google,
+    providerId: 'openai',
     type: 'chat',
   } as const;
 
@@ -180,7 +179,7 @@ describe('heterogeneous agents', () => {
             : {}),
           chatConfig: {},
           model: textModel.id,
-          provider: ModelProvider.Google,
+          provider: 'openai',
         },
       },
     } as any);
@@ -258,14 +257,14 @@ describe('useCanSendVoiceMessage', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'deepseek-v4-pro',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     const fallbackModel = {
       abilities: { audio: true },
       enabled: true,
       id: 'fallback-audio-model',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     act(() => {
@@ -274,7 +273,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: { enableAgentMode: false },
             model: primaryModel.id,
-            provider: ModelProvider.LobeHub,
+            provider: 'deepseek',
           },
         },
       } as any);
@@ -294,7 +293,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: { enableAgentMode: true },
             model: primaryModel.id,
-            provider: ModelProvider.LobeHub,
+            provider: 'deepseek',
           },
         },
       } as any);
@@ -309,14 +308,14 @@ describe('useCanSendVoiceMessage', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'deepseek-v4-flash',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     const fallbackModel = {
       abilities: { audio: true },
       enabled: true,
       id: 'fallback-audio-model',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     act(() => {
@@ -325,7 +324,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: { enableAgentMode: true },
             model: primaryModel.id,
-            provider: ModelProvider.LobeHub,
+            provider: 'deepseek',
             userId: 'user-author',
             visibility: 'public',
             workspaceId: 'workspace-1',
@@ -360,14 +359,14 @@ describe('useCanSendVoiceMessage', () => {
       abilities: { audio: true },
       enabled: true,
       id: 'gemini-audio',
-      providerId: ModelProvider.Google,
+      providerId: 'openai',
       type: 'chat',
     } as const;
     const textModel = {
       abilities: {},
       enabled: true,
       id: 'text-only',
-      providerId: ModelProvider.Google,
+      providerId: 'openai',
       type: 'chat',
     } as const;
     act(() => {
@@ -376,7 +375,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: {},
             model: audioModel.id,
-            provider: ModelProvider.Google,
+            provider: 'openai',
           },
         },
       } as any);
@@ -397,7 +396,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: {},
             model: textModel.id,
-            provider: ModelProvider.Google,
+            provider: 'openai',
           },
         },
       } as any);
@@ -411,7 +410,7 @@ describe('useCanSendVoiceMessage', () => {
           [agentId]: {
             chatConfig: {},
             model: audioModel.id,
-            provider: ModelProvider.Google,
+            provider: 'openai',
           },
         },
       } as any);

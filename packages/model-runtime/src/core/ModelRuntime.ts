@@ -1,10 +1,8 @@
 import type { ModelPerformance, ModelUsage, TracePayload } from '@lobechat/types';
 import { createTimingHelpers, getDurationMs } from '@lobechat/utils';
+import { assertModelProvider } from 'model-bank/modelProvider';
 import type { ClientOptions } from 'openai';
 
-import type { LobeBedrockAIParams } from '../providers/bedrock';
-import type { LobeCloudflareParams } from '../providers/cloudflare';
-import { LobeOpenAI } from '../providers/openai';
 import { providerRuntimeMap } from '../runtimeMap';
 import type {
   ASROptions,
@@ -22,11 +20,7 @@ import type {
   TextToSpeechPayload,
 } from '../types';
 import { AgentRuntimeErrorType } from '../types/error';
-import type {
-  AuthenticatedImageRuntime,
-  CreateImageMethodOptions,
-  CreateImagePayload,
-} from '../types/image';
+import type { CreateImageMethodOptions, CreateImagePayload } from '../types/image';
 import type {
   CreateVideoMethodOptions,
   CreateVideoPayload,
@@ -600,13 +594,6 @@ export class ModelRuntime {
   }
 
   /**
-   * Get authentication headers if runtime supports it
-   */
-  getAuthHeaders(): Record<string, string> | undefined {
-    return (this._runtime as AuthenticatedImageRuntime).getAuthHeaders?.();
-  }
-
-  /**
    * @description Initialize the runtime with the provider and the options
    * @param provider choose a model provider
    * @param params options of the choosed provider
@@ -625,21 +612,17 @@ export class ModelRuntime {
   static initializeWithProvider(
     provider: string,
     params: Partial<
-      ClientOptions &
-        LobeBedrockAIParams &
-        LobeCloudflareParams & {
-          apiKey?: string;
-          baseURL?: string;
-          userId?: string;
-          workspaceId?: string;
-        }
+      ClientOptions & {
+        apiKey?: string;
+        baseURL?: string;
+        userId?: string;
+        workspaceId?: string;
+      }
     >,
     hooks?: ModelRuntimeHooks,
   ) {
-    // runtime map does not include every provider id (e.g. vertex), so index loosely
-    const runtimeMap: Partial<Record<string, new (params: any) => LobeRuntimeAI>> =
-      providerRuntimeMap;
-    const providerAI = runtimeMap[provider] ?? LobeOpenAI;
+    assertModelProvider(provider);
+    const providerAI = providerRuntimeMap[provider];
 
     const runtimeModel: LobeRuntimeAI = new providerAI(params);
 

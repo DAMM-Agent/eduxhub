@@ -35,6 +35,7 @@
     "@lobehub/icons": "^5.15.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "diff": "^8.0.4",
+    "model-bank": "workspace:*",
     "zod": "^4.4.3"
   },
   "peerDependencies": {

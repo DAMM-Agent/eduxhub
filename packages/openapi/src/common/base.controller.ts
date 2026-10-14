@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { UnsupportedModelProviderError } from 'model-bank/modelProvider';
 
 import { RBAC_PERMISSIONS } from '@/const/rbac';
 import { getServerDB } from '@/database/core/db-adaptor';
@@ -103,6 +104,10 @@ export abstract class BaseController {
 
     // Handle other known error types
     if (error instanceof Error) {
+      if (error instanceof UnsupportedModelProviderError) {
+        return this.error(c, `UnsupportedProvider: ${error.message}`, 400);
+      }
+
       // Refusals raised by the shared server services arrive as tRPC errors;
       // map them back to their HTTP status so a missing agent is a 404, not a 500.
       if (error.name === 'TRPCError') {

@@ -329,7 +329,7 @@ const config = {
       CFBundleIconName: 'AppIcon',
       CFBundleURLTypes: [
         {
-          CFBundleURLName: 'LobeHub Protocol',
+          CFBundleURLName: 'EduxWork Protocol',
           CFBundleURLSchemes: [protocolScheme],
         },
       ],
@@ -341,7 +341,7 @@ const config = {
       NSDownloadsFolderUsageDescription:
         "Application requests access to the user's Downloads folder.",
       NSLocalNetworkUsageDescription:
-        'LobeHub connects to self-hosted servers, model providers, and other services on your local network.',
+        'EduxWork connects to self-hosted servers, model providers, and other services on your local network.',
       NSMicrophoneUsageDescription: "Application requests access to the device's microphone.",
       NSScreenCaptureUsageDescription:
         'Application requests access to record and analyze screen content for AI assistance.',
@@ -370,7 +370,7 @@ const config = {
   },
   protocols: [
     {
-      name: 'LobeHub Protocol',
+      name: 'EduxWork Protocol',
       schemes: [protocolScheme],
     },
   ],
@@ -433,7 +433,7 @@ const config = {
   ],
 
   win: {
-    executableName: 'LobeHub',
+    executableName: 'EduxWork',
   },
 };
 

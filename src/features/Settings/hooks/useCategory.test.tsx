@@ -73,6 +73,7 @@ describe('settings useCategory', () => {
       SettingsTabs.Profile,
       SettingsTabs.Appearance,
       SettingsTabs.Hotkey,
+      SettingsTabs.Messenger,
     ]);
     expect(generalGroup?.items.map((item) => item.key)).toEqual([
       SettingsTabs.Stats,
@@ -83,17 +84,16 @@ describe('settings useCategory', () => {
     ).not.toContain(SettingsTabs.Messenger);
   });
 
-  // Messenger bots are LobeHub-operated and only configurable from the cloud
-  // admin, so the tab is a dead end on self-hosted deployments.
-  it('shows Messenger in the Account group only with business features on', () => {
-    expect(getItemKeys()).not.toContain(SettingsTabs.Messenger);
-
-    const { result } = renderHook(() => useCategory(), {
-      wrapper: createWrapper(true, true),
-    });
-    const accountGroup = result.current.find((group) => group.key === SettingsGroupKey.Account);
-    expect(accountGroup?.items.map((item) => item.key)).toContain(SettingsTabs.Messenger);
-  });
+  it.each([false, true])(
+    'shows Messenger in the Account group with business features %s',
+    (enableBusinessFeatures) => {
+      const { result } = renderHook(() => useCategory(), {
+        wrapper: createWrapper(true, enableBusinessFeatures),
+      });
+      const accountGroup = result.current.find((group) => group.key === SettingsGroupKey.Account);
+      expect(accountGroup?.items.map((item) => item.key)).toContain(SettingsTabs.Messenger);
+    },
+  );
 
   it('keeps Provider visible when provider settings are enabled', () => {
     expect(getItemKeys()).toContain(SettingsTabs.Provider);

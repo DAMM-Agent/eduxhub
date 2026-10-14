@@ -6,11 +6,6 @@ import debug from 'debug';
 import type { Pricing } from 'model-bank';
 
 import { ErrorClassifier } from '../../errors';
-import { stripUnsupportedClaudeAssistantPrefill } from '../../providers/anthropic/claudePrefill';
-import {
-  isAlwaysThinkingClaudeModel,
-  rejectsDisabledThinkingAtEffort,
-} from '../../providers/anthropic/modelId';
 import type {
   ChatCompletionErrorPayload,
   ChatMethodOptions,
@@ -40,11 +35,13 @@ import { resolveModelSamplingParameters } from '../parameterResolver';
 import { AnthropicStream, type AnthropicStreamOptions } from '../streams';
 import { readableFromAsyncIterable } from '../streams/protocol';
 import { type ComputeChatCostOptions } from '../usageConverters/utils/computeChatCost';
+import { stripUnsupportedClaudeAssistantPrefill } from './claudePrefill';
 import {
   type AnthropicGenerateObjectConfig,
   createAnthropicGenerateObject,
 } from './generateObject';
 import { handleAnthropicError } from './handleAnthropicError';
+import { isAlwaysThinkingClaudeModel, rejectsDisabledThinkingAtEffort } from './modelId';
 import {
   initializeAnthropicDiagnostics,
   observeAnthropicStream,
@@ -168,12 +165,12 @@ export const buildDefaultAnthropicPayload = async (
     enabledSearch,
   } = payload;
 
-  const { anthropic: anthropicModels } = await import('model-bank');
+  const { loadModels } = await import('model-bank');
 
   const resolvedMaxTokens = await resolveMaxTokens({
     max_tokens,
     model,
-    providerModels: anthropicModels,
+    providerModels: await loadModels(),
     thinking,
   });
 
@@ -440,7 +437,7 @@ export const createDefaultAnthropicModels = async ({
     id: model.id,
   }));
 
-  return processModelList(standardModelList, MODEL_LIST_CONFIGS.anthropic, 'anthropic');
+  return processModelList(standardModelList, MODEL_LIST_CONFIGS.anthropic);
 };
 
 /**

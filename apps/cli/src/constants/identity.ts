@@ -14,10 +14,10 @@
  */
 
 /** Product name as it appears inside sentences. */
-export const CLI_PRODUCT_NAME = 'LobeHub';
+export const CLI_PRODUCT_NAME = 'EduxWork';
 
 /** The CLI's own name, e.g. in `--help` and the connect banner. */
-export const CLI_DISPLAY_NAME = 'LobeHub CLI';
+export const CLI_DISPLAY_NAME = 'EduxWork CLI';
 
 /**
  * The command users type. Also the man page's title (uppercased) and the name

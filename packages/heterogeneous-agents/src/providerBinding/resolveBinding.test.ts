@@ -11,25 +11,44 @@ const runtime = (
   overrides: Partial<AiProviderRuntimeConfig> = {},
 ): AiProviderRuntimeConfig => ({
   config: {},
-  keyVaults: { apiKey: 'test-key' },
+  keyVaults: {
+    apiKey: 'test-key',
+    ...(sdkType === 'anthropic' ? { baseURL: 'https://api.minimaxi.com/anthropic' } : {}),
+  },
   settings: { sdkType },
   ...overrides,
 });
 
 describe('heterogeneous provider binding protocol resolver', () => {
-  it('maps Anthropic and Google providers to their canonical protocols', () => {
-    expect(getProviderInferenceProtocols('anthropic', runtime('anthropic'))).toEqual([
+  it.each(['anthropic', 'google', 'bedrock', 'lobehub', 'custom-openai', 'volcenginecodingplan'])(
+    'rejects %s despite saved credentials and a supported wire protocol',
+    (providerId) => {
+      const runtimeConfig = runtime('openai', {
+        config: { enableResponseApi: true },
+        keyVaults: { apiKey: 'old-key', baseURL: 'https://proxy.example.com/v1' },
+      });
+      expect(getProviderInferenceProtocols(providerId, runtimeConfig)).toEqual([]);
+      expect(
+        resolveHeterogeneousProviderBinding({
+          agentType: 'codex',
+          apiConfig: { model: 'model', providerId },
+          providerEnabled: true,
+          runtimeConfig,
+        }),
+      ).toEqual({ error: { code: 'providerUnavailable', providerId } });
+    },
+  );
+
+  it('preserves the Anthropic message protocol for a retained provider', () => {
+    expect(getProviderInferenceProtocols('minimax', runtime('anthropic'))).toEqual([
       'anthropic-messages',
-    ]);
-    expect(getProviderInferenceProtocols('google', runtime('google'))).toEqual([
-      'google-generative-ai',
     ]);
   });
 
-  it('keeps a custom OpenAI-compatible provider chat-only by default', () => {
+  it('keeps a retained OpenAI-compatible provider chat-only by default', () => {
     expect(
       getProviderInferenceProtocols(
-        'custom-openai',
+        'qwen',
         runtime('openai', { settings: { sdkType: 'openai', supportResponsesApi: true } }),
       ),
     ).toEqual(['openai-chat-completions']);
@@ -38,7 +57,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
   it('enables Responses only when a capable provider actually opts in', () => {
     expect(
       getProviderInferenceProtocols(
-        'custom-openai',
+        'qwen',
         runtime('openai', {
           config: { enableResponseApi: true },
           settings: { sdkType: 'openai', supportResponsesApi: true },
@@ -50,7 +69,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
   it('routes Claude, Codex, and Kimi Code only to their supported protocols', () => {
     const claude = resolveHeterogeneousProviderBinding({
       agentType: 'claude-code',
-      apiConfig: { model: 'claude-test', providerId: 'anthropic' },
+      apiConfig: { model: 'claude-test', providerId: 'minimax' },
       providerEnabled: true,
       runtimeConfig: runtime('anthropic'),
     });
@@ -58,7 +77,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
 
     const codexChatOnly = resolveHeterogeneousProviderBinding({
       agentType: 'codex',
-      apiConfig: { model: 'gpt-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'gpt-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai', {
         keyVaults: { apiKey: 'test-key', baseURL: 'https://example.com/v1' },
@@ -69,7 +88,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
 
     const codexResponses = resolveHeterogeneousProviderBinding({
       agentType: 'codex',
-      apiConfig: { model: 'gpt-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'gpt-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai', {
         config: { enableResponseApi: true },
@@ -84,7 +103,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
 
     const kimiAnthropic = resolveHeterogeneousProviderBinding({
       agentType: 'kimi-code',
-      apiConfig: { model: 'claude-test', providerId: 'anthropic' },
+      apiConfig: { model: 'claude-test', providerId: 'minimax' },
       providerEnabled: true,
       runtimeConfig: runtime('anthropic'),
     });
@@ -100,7 +119,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
 
     const kimiCustomWithoutEndpoint = resolveHeterogeneousProviderBinding({
       agentType: 'kimi-code',
-      apiConfig: { model: 'gpt-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'gpt-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai'),
     });
@@ -110,15 +129,15 @@ describe('heterogeneous provider binding protocol resolver', () => {
       agentType: 'kimi-code',
       apiConfig: { model: 'gemini-test', providerId: 'google' },
       providerEnabled: true,
-      runtimeConfig: runtime('google'),
+      runtimeConfig: runtime('openai'),
     });
-    expect(kimiGoogle.error?.code).toBe('protocolMismatch');
+    expect(kimiGoogle.error?.code).toBe('providerUnavailable');
   });
 
   it('routes TRAE only to Responses providers', () => {
     const chatOnly = resolveHeterogeneousProviderBinding({
       agentType: 'trae',
-      apiConfig: { model: 'model-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'model-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai', {
         keyVaults: { apiKey: 'test-key', baseURL: 'https://example.com/v1' },
@@ -129,7 +148,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
 
     const responses = resolveHeterogeneousProviderBinding({
       agentType: 'trae',
-      apiConfig: { model: 'model-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'model-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai', {
         config: { enableResponseApi: true },
@@ -148,14 +167,14 @@ describe('heterogeneous provider binding protocol resolver', () => {
       endpoint: 'https://chat.example.com/v1',
       expectedEndpoint: 'https://chat.example.com/v1',
       expectedProtocol: 'openai-chat-completions',
-      providerId: 'custom-chat',
+      providerId: 'qwen',
       sdkType: 'openai',
     },
     {
       endpoint: 'https://responses.example.com/v1/',
       expectedEndpoint: 'https://responses.example.com/v1',
       expectedProtocol: 'openai-responses',
-      providerId: 'custom-responses',
+      providerId: 'volcengine',
       responses: true,
       sdkType: 'openai',
     },
@@ -163,15 +182,8 @@ describe('heterogeneous provider binding protocol resolver', () => {
       endpoint: 'https://messages.example.com',
       expectedEndpoint: 'https://messages.example.com',
       expectedProtocol: 'anthropic-messages',
-      providerId: 'custom-anthropic',
+      providerId: 'minimax',
       sdkType: 'anthropic',
-    },
-    {
-      endpoint: 'https://google.example.com/gemini/',
-      expectedEndpoint: 'https://google.example.com/gemini/v1beta',
-      expectedProtocol: 'google-generative-ai',
-      providerId: 'custom-google',
-      sdkType: 'google',
     },
   ] as const)(
     'binds Pi to $expectedProtocol',
@@ -197,16 +209,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
     },
   );
 
-  it.each([
-    ['openai', 'openai', 'openai-responses', 'https://api.openai.com/v1'],
-    ['anthropic', 'anthropic', 'anthropic-messages', 'https://api.anthropic.com'],
-    [
-      'google',
-      'google',
-      'google-generative-ai',
-      'https://generativelanguage.googleapis.com/v1beta',
-    ],
-  ] as const)(
+  it.each([['openai', 'openai', 'openai-responses', 'https://api.openai.com/v1']] as const)(
     'uses the canonical %s endpoint when no provider base URL is configured',
     (providerId, sdkType, protocol, endpoint) => {
       const result = resolveHeterogeneousProviderBinding({
@@ -220,15 +223,15 @@ describe('heterogeneous provider binding protocol resolver', () => {
     },
   );
 
-  it('requires a concrete endpoint for non-canonical Pi providers', () => {
+  it('requires a concrete endpoint for retained third-party Pi providers', () => {
     const result = resolveHeterogeneousProviderBinding({
       agentType: 'pi',
-      apiConfig: { model: 'model-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'model-test', providerId: 'qwen' },
       providerEnabled: true,
       runtimeConfig: runtime('openai'),
     });
 
-    expect(result.error).toEqual({ code: 'endpointMissing', providerId: 'custom-openai' });
+    expect(result.error).toEqual({ code: 'endpointMissing', providerId: 'qwen' });
   });
 
   it('carries server-resolved model capabilities into the binding resolution', () => {
@@ -238,12 +241,12 @@ describe('heterogeneous provider binding protocol resolver', () => {
       displayName: 'Bound model',
       id: 'model-test',
       maxOutput: 32_000,
-      providerId: 'custom-openai',
+      providerId: 'qwen',
       type: 'chat',
     };
     const result = resolveHeterogeneousProviderBinding({
       agentType: 'pi',
-      apiConfig: { model: 'model-test', providerId: 'custom-openai' },
+      apiConfig: { model: 'model-test', providerId: 'qwen' },
       enabledModels: [modelMetadata],
       providerEnabled: true,
       runtimeConfig: runtime('openai', {
@@ -257,21 +260,21 @@ describe('heterogeneous provider binding protocol resolver', () => {
   it.each([
     [
       'anthropic-messages',
-      'anthropic-custom',
+      'minimax',
       runtime('anthropic', {
         keyVaults: { apiKey: 'test-key', baseURL: 'https://anthropic.example.com' },
       }),
     ],
     [
       'openai-chat-completions',
-      'chat-provider',
+      'qwen',
       runtime('openai', {
         keyVaults: { apiKey: 'test-key', baseURL: 'https://chat.example.com/v1' },
       }),
     ],
     [
       'openai-responses',
-      'responses-provider',
+      'volcengine',
       runtime('openai', {
         config: { enableResponseApi: true },
         keyVaults: { apiKey: 'test-key', baseURL: 'https://responses.example.com/v1' },
@@ -289,7 +292,7 @@ describe('heterogeneous provider binding protocol resolver', () => {
     expect(result.resolution?.protocol).toBe(protocol);
   });
 
-  it('uses official endpoints for Grok Build and rejects Google or missing custom endpoints', () => {
+  it('uses official endpoints for Grok Build and rejects Google or missing third-party endpoints', () => {
     expect(
       resolveHeterogeneousProviderBinding({
         agentType: 'grok-build',
@@ -301,35 +304,54 @@ describe('heterogeneous provider binding protocol resolver', () => {
     expect(
       resolveHeterogeneousProviderBinding({
         agentType: 'grok-build',
-        apiConfig: { model: 'claude-test', providerId: 'anthropic' },
+        apiConfig: { model: 'claude-test', providerId: 'minimax' },
         providerEnabled: true,
         runtimeConfig: runtime('anthropic'),
       }).resolution,
-    ).toMatchObject({ endpoint: 'https://api.anthropic.com', protocol: 'anthropic-messages' });
+    ).toMatchObject({
+      endpoint: 'https://api.minimaxi.com/anthropic',
+      protocol: 'anthropic-messages',
+    });
     expect(
       resolveHeterogeneousProviderBinding({
         agentType: 'grok-build',
         apiConfig: { model: 'gemini-test', providerId: 'google' },
         providerEnabled: true,
-        runtimeConfig: runtime('google'),
+        runtimeConfig: runtime('openai'),
       }).error?.code,
-    ).toBe('protocolMismatch');
+    ).toBe('providerUnavailable');
     expect(
       resolveHeterogeneousProviderBinding({
         agentType: 'grok-build',
-        apiConfig: { model: 'chat-test', providerId: 'custom-openai' },
+        apiConfig: { model: 'chat-test', providerId: 'qwen' },
         providerEnabled: true,
         runtimeConfig: runtime('openai'),
       }).error?.code,
     ).toBe('endpointMissing');
   });
 
+  it.each(['claude-code', 'kimi-code', 'pi', 'grok-build'])(
+    'never falls back to the official Anthropic endpoint for %s',
+    (agentType) => {
+      expect(
+        resolveHeterogeneousProviderBinding({
+          agentType,
+          apiConfig: { model: 'MiniMax-M2.7', providerId: 'minimax' },
+          providerEnabled: true,
+          runtimeConfig: runtime('anthropic', { keyVaults: { apiKey: 'minimax-key' } }),
+        }),
+      ).toEqual({ error: { code: 'endpointMissing', providerId: 'minimax' } });
+    },
+  );
+
   it('validates credentials only inside the trusted host boundary', () => {
     const input = {
       agentType: 'claude-code',
-      apiConfig: { model: 'claude-test', providerId: 'anthropic' },
+      apiConfig: { model: 'claude-test', providerId: 'minimax' },
       providerEnabled: true,
-      runtimeConfig: runtime('anthropic', { keyVaults: {} }),
+      runtimeConfig: runtime('anthropic', {
+        keyVaults: { baseURL: 'https://api.minimaxi.com/anthropic' },
+      }),
     };
     expect(resolveHeterogeneousProviderBinding(input).error).toBeUndefined();
     expect(
@@ -343,14 +365,14 @@ describe('heterogeneous provider binding protocol resolver', () => {
         agentType: 'pi',
         apiConfig: { model: 'model', providerId: 'bedrock' },
         providerEnabled: true,
-        runtimeConfig: runtime('bedrock'),
+        runtimeConfig: runtime('openai'),
       }).error?.code,
-    ).toBe('protocolMismatch');
+    ).toBe('providerUnavailable');
 
     expect(
       resolveHeterogeneousProviderBinding({
         agentType: 'amp',
-        apiConfig: { model: 'model', providerId: 'anthropic' },
+        apiConfig: { model: 'model', providerId: 'minimax' },
         providerEnabled: true,
         runtimeConfig: runtime('anthropic'),
       }).error?.code,

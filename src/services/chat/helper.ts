@@ -1,5 +1,5 @@
 import type { EnabledAiModel } from 'model-bank';
-import { ModelProvider } from 'model-bank/modelProvider';
+import { assertModelProvider, isModelProvider } from 'model-bank/modelProvider';
 
 import { getAiInfraStoreState } from '@/store/aiInfra';
 import { aiProviderSelectors } from '@/store/aiInfra/selectors';
@@ -13,9 +13,7 @@ export const getEnabledRuntimeModel = (
     (item) => item.id === model && item.providerId === provider,
   );
 
-  if (exactModel || provider !== ModelProvider.LobeHub) return exactModel;
-
-  return state.enabledAiModels?.find((item) => item.id === model);
+  return isModelProvider(provider) ? exactModel : undefined;
 };
 
 const getModelAbilities = (model: string, provider: string) => {
@@ -65,10 +63,6 @@ export const isEnableFetchOnClient = (provider: string) => {
 };
 
 export const resolveRuntimeProvider = (provider: string) => {
-  const isBuiltin = Object.values(ModelProvider).includes(provider as any);
-  if (isBuiltin) return provider;
-
-  const providerConfig = aiProviderSelectors.providerConfigById(provider)(getAiInfraStoreState());
-
-  return providerConfig?.settings.sdkType || 'openai';
+  assertModelProvider(provider);
+  return provider;
 };

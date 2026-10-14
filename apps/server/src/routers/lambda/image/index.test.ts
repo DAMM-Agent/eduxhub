@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AsyncTaskStatus, AsyncTaskType } from '@/types/asyncTask';
 
+import { videoRouter } from '../video';
 import { imageRouter } from './index';
+
+vi.mock('@/database/models/user', () => ({ UserModel: class {} }));
+vi.mock('@/database/models/generation', () => ({ GenerationModel: class {} }));
+vi.mock('@/server/modules/ModelRuntime', () => ({ initModelRuntimeFromDB: vi.fn() }));
+vi.mock('@/server/services/generation/videoBackgroundPolling', () => ({
+  processBackgroundVideoPolling: vi.fn(),
+}));
 
 // Use vi.hoisted for variables used in vi.mock factory
 const {
@@ -14,9 +22,7 @@ const {
   mockChargeBeforeGenerate,
   mockCreateAsyncCaller,
   mockGenerationTopicFindById,
-  mockFindUserById,
   mockInsertValues,
-  mockIsLobeHubModelAvailable,
   mockResolveBusinessModelMapping,
 } = vi.hoisted(() => ({
   mockServerDB: {
@@ -29,9 +35,7 @@ const {
   mockChargeBeforeGenerate: vi.fn(),
   mockCreateAsyncCaller: vi.fn(),
   mockGenerationTopicFindById: vi.fn(),
-  mockFindUserById: vi.fn(),
   mockInsertValues: [] as unknown[],
-  mockIsLobeHubModelAvailable: vi.fn(),
   mockResolveBusinessModelMapping: vi.fn(),
 }));
 
@@ -72,12 +76,6 @@ vi.mock('@/database/models/generationTopic', () => ({
   }),
 }));
 
-vi.mock('@/database/models/user', () => ({
-  UserModel: {
-    findById: mockFindUserById,
-  },
-}));
-
 // Mock chargeBeforeGenerate
 vi.mock('@/business/server/image-generation/chargeBeforeGenerate', () => ({
   chargeBeforeGenerate: (params: any) => mockChargeBeforeGenerate(params),
@@ -98,16 +96,6 @@ vi.mock('@lobechat/business-model-runtime', async (importOriginal) => ({
   ...((await importOriginal()) as any),
   resolveBusinessModelMapping: (...args: [string, string]) =>
     mockResolveBusinessModelMapping(...args),
-}));
-
-vi.mock('@lobechat/business-model-bank/model-config', () => ({
-  isLobeHubModelAvailable: (
-    ...args: [
-      string,
-      string,
-      { getUserEmail?: () => Promise<string | null | undefined>; userEmail?: string | null }?,
-    ]
-  ) => mockIsLobeHubModelAvailable(...args),
 }));
 
 // Mock async caller
@@ -157,7 +145,7 @@ describe('imageRouter', () => {
       width: 512,
       height: 512,
     },
-    provider: 'test-provider',
+    provider: 'openai',
     ...overrides,
   });
 
@@ -174,8 +162,6 @@ describe('imageRouter', () => {
     mockChargeBeforeGenerate.mockResolvedValue(undefined);
     mockGetKeyFromFullUrl.mockResolvedValue(null);
     mockGetFullFileUrl.mockResolvedValue(null);
-    mockFindUserById.mockResolvedValue({ email: 'user@example.com' });
-    mockIsLobeHubModelAvailable.mockResolvedValue(true);
     mockGenerationTopicFindById.mockResolvedValue({ id: 'topic-1' });
 
     // Setup default transaction mock
@@ -183,7 +169,7 @@ describe('imageRouter', () => {
       id: 'batch-1',
       generationTopicId: 'topic-1',
       model: 'stable-diffusion',
-      provider: 'test-provider',
+      provider: 'openai',
       config: {},
       userId: mockUserId,
     };
@@ -250,32 +236,26 @@ describe('imageRouter', () => {
       expect(mockServerDB.transaction).toHaveBeenCalled();
     });
 
-    it('should validate mapped model id before rejecting deprecated lobehub image models', async () => {
-      mockResolveBusinessModelMapping.mockResolvedValue({
-        requestedModelId: 'onboarding-image',
-        resolvedModelId: 'gpt-image-1',
-      });
-
-      const ctx = createMockCtx();
-      const input = createDefaultInput({
-        model: 'onboarding-image',
-        provider: 'lobehub',
-      });
-
-      const caller = imageRouter.createCaller(ctx);
-      const result = await caller.createImage(input);
-
-      expect(result.success).toBe(true);
-      expect(mockResolveBusinessModelMapping).toHaveBeenCalledWith('lobehub', 'onboarding-image');
-      expect(mockIsLobeHubModelAvailable).toHaveBeenCalledWith('gpt-image-1', 'image', {
-        getUserEmail: expect.any(Function),
-      });
-      const availabilityOptions = mockIsLobeHubModelAvailable.mock.calls.at(-1)?.[2];
-      expect(mockFindUserById).not.toHaveBeenCalled();
-      await expect(availabilityOptions!.getUserEmail!()).resolves.toBe('user@example.com');
-      expect(mockFindUserById).toHaveBeenCalledWith(mockServerDB, mockUserId);
-      expect(mockCreateAsyncCaller).toHaveBeenCalledWith({ userId: mockUserId });
-    });
+    it.each(['lobehub', 'comfyui', 'fal', 'custom-provider'])(
+      'rejects %s for images and videos before billing, mapping or task creation',
+      async (provider) => {
+        const caller = imageRouter.createCaller(createMockCtx());
+        await expect(caller.createImage(createDefaultInput({ provider }))).rejects.toMatchObject({
+          code: 'BAD_REQUEST',
+          message: expect.stringContaining('UnsupportedProvider'),
+        });
+        await expect(
+          videoRouter.createCaller(createMockCtx()).createVideo(createDefaultInput({ provider })),
+        ).rejects.toMatchObject({
+          code: 'BAD_REQUEST',
+          message: expect.stringContaining('UnsupportedProvider'),
+        });
+        expect(mockChargeBeforeGenerate).not.toHaveBeenCalled();
+        expect(mockResolveBusinessModelMapping).not.toHaveBeenCalled();
+        expect(mockServerDB.transaction).not.toHaveBeenCalled();
+        expect(mockCreateAsyncCaller).not.toHaveBeenCalled();
+      },
+    );
 
     it('should reject inaccessible generation topic before charging or creating records', async () => {
       mockGenerationTopicFindById.mockResolvedValue(undefined);
@@ -288,26 +268,6 @@ describe('imageRouter', () => {
       });
 
       expect(mockChargeBeforeGenerate).not.toHaveBeenCalled();
-      expect(mockServerDB.transaction).not.toHaveBeenCalled();
-      expect(mockCreateAsyncCaller).not.toHaveBeenCalled();
-    });
-
-    it('should reject unavailable lobehub image models before creating async tasks', async () => {
-      mockIsLobeHubModelAvailable.mockResolvedValue(false);
-
-      const ctx = createMockCtx();
-      const input = createDefaultInput({
-        model: 'restricted-image-model',
-        provider: 'lobehub',
-      });
-
-      const caller = imageRouter.createCaller(ctx);
-
-      await expect(caller.createImage(input)).rejects.toMatchObject({
-        code: 'BAD_REQUEST',
-        message: 'LobeHubModelDeprecated',
-      });
-
       expect(mockServerDB.transaction).not.toHaveBeenCalled();
       expect(mockCreateAsyncCaller).not.toHaveBeenCalled();
     });
@@ -450,7 +410,7 @@ describe('imageRouter', () => {
           generationTopicId: 'topic-1',
           imageNum: 2,
           model: 'stable-diffusion',
-          provider: 'test-provider',
+          provider: 'openai',
           userId: mockUserId,
         }),
       );

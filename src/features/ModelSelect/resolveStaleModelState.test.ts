@@ -8,8 +8,8 @@ import { resolveEnableTargetProviderId, resolveStaleModelState } from './resolve
 const enabledList = [
   {
     children: [{ abilities: {}, displayName: 'Claude Opus 4.6', id: 'claude-opus-4-6' }],
-    id: 'lobehub',
-    name: 'LobeHub',
+    id: 'minimax',
+    name: 'MiniMax',
     source: 'builtin',
   },
 ] as unknown as EnabledProviderWithModels[];
@@ -20,7 +20,7 @@ const builtinAiModelList = [
     displayName: 'GPT-5.4 nano',
     enabled: false,
     id: 'gpt-5.4-nano',
-    providerId: 'lobehub',
+    providerId: 'minimax',
     type: 'chat',
   },
 ] as unknown as LobeDefaultAiModelListItem[];
@@ -30,16 +30,47 @@ const context = { builtinAiModelList, enabledList, modelType: 'chat' as const };
 describe('resolveStaleModelState', () => {
   it('returns undefined for a value present in the enabled list', () => {
     expect(
-      resolveStaleModelState({ model: 'claude-opus-4-6', provider: 'lobehub' }, context),
+      resolveStaleModelState({ model: 'claude-opus-4-6', provider: 'minimax' }, context),
     ).toBeUndefined();
   });
+
+  it.each(['google', 'lobehub', 'anthropic', 'volcenginecodingplan', 'custom-provider'])(
+    'keeps %s unavailable despite stale caches, identical model IDs, or redirects',
+    (provider) => {
+      const value = { model: 'gpt-5.4-nano', provider };
+      const staleContext = {
+        ...context,
+        enabledList: [
+          {
+            ...enabledList[0],
+            id: provider,
+            children: [{ ...enabledList[0].children[0], id: value.model }],
+          },
+        ],
+        builtinAiModelList: [
+          ...builtinAiModelList,
+          { ...builtinAiModelList[0], providerId: provider },
+        ],
+        modelRedirects: { [`${provider}/${value.model}`]: 'gpt-successor' },
+      };
+      expect(resolveStaleModelState(value, staleContext)).toEqual({ status: 'removed' });
+      expect(
+        resolveEnableTargetProviderId(value, {
+          enabledAiProviders: [{ id: provider }],
+          enabledList: staleContext.enabledList,
+          metaProviderId: 'openai',
+        }),
+      ).toBeUndefined();
+      expect(value).toEqual({ model: 'gpt-5.4-nano', provider });
+    },
+  );
 
   it('returns undefined when there is no value', () => {
     expect(resolveStaleModelState(undefined, context)).toBeUndefined();
   });
 
   it('resolves a disabled builtin model as notEnabled with its metadata', () => {
-    const state = resolveStaleModelState({ model: 'gpt-5.4-nano', provider: 'lobehub' }, context);
+    const state = resolveStaleModelState({ model: 'gpt-5.4-nano', provider: 'minimax' }, context);
 
     expect(state?.status).toBe('notEnabled');
     expect(state?.meta?.displayName).toBe('GPT-5.4 nano');
@@ -70,7 +101,7 @@ describe('resolveStaleModelState', () => {
 
   it('ignores builtin models of a different type', () => {
     const state = resolveStaleModelState(
-      { model: 'gpt-5.4-nano', provider: 'lobehub' },
+      { model: 'gpt-5.4-nano', provider: 'minimax' },
       { ...context, modelType: 'embedding' },
     );
 
@@ -81,32 +112,32 @@ describe('resolveStaleModelState', () => {
     it('prefers the persisted provider when it has enabled models of this type', () => {
       expect(
         resolveEnableTargetProviderId(
-          { model: 'gpt-5.4-nano', provider: 'lobehub' },
+          { model: 'gpt-5.4-nano', provider: 'minimax' },
           { enabledList, metaProviderId: 'openai' },
         ),
-      ).toBe('lobehub');
+      ).toBe('minimax');
     });
 
     it('prefers the persisted provider when it is enabled without models of this type', () => {
       expect(
         resolveEnableTargetProviderId(
-          { model: 'gpt-5.4-nano', provider: 'lobehub' },
+          { model: 'gpt-5.4-nano', provider: 'minimax' },
           {
-            enabledAiProviders: [{ id: 'lobehub' }],
+            enabledAiProviders: [{ id: 'minimax' }],
             enabledList: [],
             metaProviderId: 'openai',
           },
         ),
-      ).toBe('lobehub');
+      ).toBe('minimax');
     });
 
-    it('falls back to the builtin provider when the persisted provider is unknown', () => {
+    it('does not revive a removed provider through a same-name builtin model', () => {
       expect(
         resolveEnableTargetProviderId(
           { model: 'gpt-5.4-nano', provider: 'legacy-provider' },
-          { enabledAiProviders: [{ id: 'lobehub' }], enabledList, metaProviderId: 'openai' },
+          { enabledAiProviders: [{ id: 'minimax' }], enabledList, metaProviderId: 'openai' },
         ),
-      ).toBe('openai');
+      ).toBeUndefined();
     });
 
     it('falls back to the builtin provider when the value has no provider', () => {
@@ -120,21 +151,21 @@ describe('resolveStaleModelState', () => {
   });
 
   describe('redirected', () => {
-    const modelRedirects = { 'lobehub/gemini-3.1-flash-lite-preview': 'gemini-3.1-flash-lite' };
+    const modelRedirects = { 'minimax/gemini-3.1-flash-lite-preview': 'gemini-3.1-flash-lite' };
     const withSuccessorMeta = [
       ...builtinAiModelList,
       {
         abilities: {},
         displayName: 'Gemini 3.1 Flash Lite',
         id: 'gemini-3.1-flash-lite',
-        providerId: 'lobehub',
+        providerId: 'minimax',
         type: 'chat',
       },
     ] as unknown as LobeDefaultAiModelListItem[];
 
     it('resolves a redirect-mapped id as redirected with successor metadata', () => {
       const state = resolveStaleModelState(
-        { model: 'gemini-3.1-flash-lite-preview', provider: 'lobehub' },
+        { model: 'gemini-3.1-flash-lite-preview', provider: 'minimax' },
         { ...context, builtinAiModelList: withSuccessorMeta, modelRedirects },
       );
 
@@ -145,7 +176,7 @@ describe('resolveStaleModelState', () => {
 
     it('keeps successorId even when the successor has no builtin metadata', () => {
       const state = resolveStaleModelState(
-        { model: 'gemini-3.1-flash-lite-preview', provider: 'lobehub' },
+        { model: 'gemini-3.1-flash-lite-preview', provider: 'minimax' },
         { ...context, modelRedirects },
       );
 
@@ -156,8 +187,8 @@ describe('resolveStaleModelState', () => {
 
     it('prefers the notEnabled state when the id still exists in the builtin bank', () => {
       const state = resolveStaleModelState(
-        { model: 'gpt-5.4-nano', provider: 'lobehub' },
-        { ...context, modelRedirects: { 'lobehub/gpt-5.4-nano': 'gpt-5.5-nano' } },
+        { model: 'gpt-5.4-nano', provider: 'minimax' },
+        { ...context, modelRedirects: { 'minimax/gpt-5.4-nano': 'gpt-5.5-nano' } },
       );
 
       expect(state?.status).toBe('notEnabled');

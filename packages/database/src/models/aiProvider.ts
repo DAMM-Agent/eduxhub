@@ -5,9 +5,9 @@ import type {
   CreateAiProviderParams,
   UpdateAiProviderConfigParams,
 } from '@lobechat/types';
-import { and, asc, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { isEmpty } from 'es-toolkit/compat';
-import { ModelProvider } from 'model-bank';
+import { assertModelProvider, isModelProvider, SUPPORTED_MODEL_PROVIDERS } from 'model-bank';
 import { DEFAULT_MODEL_PROVIDER_LIST } from 'model-bank/modelProviders';
 
 import { merge } from '@/utils/merge';
@@ -35,6 +35,9 @@ export class AiProviderModel {
   private scopeWhere = () =>
     buildWorkspaceWhere({ userId: this.userId, workspaceId: this.workspaceId }, aiProviders);
 
+  private availableWhere = () =>
+    and(this.scopeWhere(), inArray(aiProviders.id, SUPPORTED_MODEL_PROVIDERS));
+
   private modelScopeWhere = () =>
     buildWorkspaceWhere({ userId: this.userId, workspaceId: this.workspaceId }, aiModels);
 
@@ -58,6 +61,7 @@ export class AiProviderModel {
     { keyVaults: userKey, ...params }: CreateAiProviderParams,
     encryptor?: EncryptUserKeyVaults,
   ) => {
+    assertModelProvider(params.id);
     const defaultSerialize = (s: string) => s;
     const encrypt = encryptor ?? defaultSerialize;
     const keyVaults = await encrypt(JSON.stringify(userKey));
@@ -92,10 +96,11 @@ export class AiProviderModel {
   };
 
   query = async () => {
-    return this.db.query.aiProviders.findMany({
-      orderBy: [desc(aiProviders.updatedAt)],
-      where: this.scopeWhere(),
-    });
+    return this.db
+      .select()
+      .from(aiProviders)
+      .where(this.availableWhere())
+      .orderBy(desc(aiProviders.updatedAt));
   };
 
   getAiProviderList = async (): Promise<AiProviderListItem[]> => {
@@ -110,19 +115,25 @@ export class AiProviderModel {
         source: aiProviders.source,
       })
       .from(aiProviders)
-      .where(this.scopeWhere())
+      .where(this.availableWhere())
       .orderBy(asc(aiProviders.sort), desc(aiProviders.updatedAt));
 
     return result as AiProviderListItem[];
   };
 
   findById = async (id: string) => {
-    return this.db.query.aiProviders.findFirst({
-      where: and(eq(aiProviders.id, id), this.scopeWhere()),
-    });
+    assertModelProvider(id);
+    const [result] = await this.db
+      .select()
+      .from(aiProviders)
+      .where(and(eq(aiProviders.id, id), this.scopeWhere()))
+      .limit(1);
+    return result;
   };
 
   update = async (id: string, value: Partial<AiProviderSelectItem>) => {
+    assertModelProvider(id);
+    if (value.id !== undefined) assertModelProvider(value.id);
     return this.db
       .update(aiProviders)
       .set({ ...value, updatedAt: new Date() })
@@ -135,6 +146,7 @@ export class AiProviderModel {
     encryptor?: EncryptUserKeyVaults,
     decryptor?: DecryptUserKeyVaults,
   ) => {
+    assertModelProvider(id);
     const defaultSerialize = (s: string) => s;
     const encrypt = encryptor ?? defaultSerialize;
     const decrypt = decryptor ?? JSON.parse;
@@ -147,9 +159,11 @@ export class AiProviderModel {
     // preserve the hidden fields of a row created by another workspace member.
     let mergedKeyVaults = value.keyVaults || {};
 
-    const existing = await this.db.query.aiProviders.findFirst({
-      where: and(eq(aiProviders.id, id), this.scopeWhere()),
-    });
+    const [existing] = await this.db
+      .select()
+      .from(aiProviders)
+      .where(and(eq(aiProviders.id, id), this.scopeWhere()))
+      .limit(1);
     if (existing?.keyVaults) {
       try {
         const existingKeyVaults = await decrypt(existing.keyVaults);
@@ -179,6 +193,7 @@ export class AiProviderModel {
   };
 
   toggleProviderEnabled = async (id: string, enabled: boolean) => {
+    assertModelProvider(id);
     return this.db
       .insert(aiProviders)
       .values(
@@ -191,6 +206,7 @@ export class AiProviderModel {
   };
 
   updateOrder = async (sortMap: { id: string; sort: number }[]) => {
+    sortMap.forEach(({ id }) => assertModelProvider(id));
     await this.db.transaction(async (tx) => {
       const updates = sortMap.map(({ id, sort }) => {
         return tx
@@ -218,6 +234,7 @@ export class AiProviderModel {
     id: string,
     decryptor?: DecryptUserKeyVaults,
   ): Promise<AiProviderDetailItem | undefined> => {
+    assertModelProvider(id);
     const query = this.db
       .select({
         checkModel: aiProviders.checkModel,
@@ -284,7 +301,7 @@ export class AiProviderModel {
         settings: aiProviders.settings,
       })
       .from(aiProviders)
-      .where(this.scopeWhere());
+      .where(this.availableWhere());
 
     const decrypt = decryptor ?? JSON.parse;
     const runtimeConfig: Record<string, AiProviderRuntimeConfig> = {};
@@ -314,7 +331,7 @@ export class AiProviderModel {
     return runtimeConfig;
   };
 
-  private isBuiltInProvider = (id: string) => Object.values(ModelProvider).includes(id as any);
+  private isBuiltInProvider = (id: string) => isModelProvider(id);
 
   private getProviderSource = (id: string) => (this.isBuiltInProvider(id) ? 'builtin' : 'custom');
 }

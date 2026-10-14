@@ -17,6 +17,7 @@ import { createCallbacksTransformer } from '@lobechat/model-runtime';
 import type { ModelUsage } from '@lobechat/types';
 import debug from 'debug';
 import type Redis from 'ioredis';
+import { assertModelProvider } from 'model-bank/modelProvider';
 
 import { getInvocationDeadline } from '@/server/utils/invocationDeadline';
 import { encodeAsync } from '@/utils/tokenizer';
@@ -152,6 +153,7 @@ export class RelayModelRuntime implements Pick<
    */
   private async start(method: LlmRelayMethod, payload: unknown, model: string) {
     const { callId, provider, redis } = this.params;
+    assertModelProvider(provider);
     const dispatchedAt = this.now();
     const ttlMs = this.deadlines.totalMs + LLM_RELAY_KEY_GRACE_MS;
 

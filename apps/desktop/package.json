@@ -1,8 +1,8 @@
 {
-  "name": "lobehub-desktop-dev",
+  "name": "eduxwork-desktop-dev",
   "version": "0.0.0",
   "private": true,
-  "description": "LobeHub Desktop Application",
+  "description": "EduxWork Desktop Application",
   "homepage": "https://lobehub.com",
   "repository": {
     "type": "git",
@@ -138,5 +138,6 @@
   },
   "optionalDependencies": {
     "node-mac-permissions": "^2.5.0"
-  }
+  },
+  "productName": "EduxWork"
 }

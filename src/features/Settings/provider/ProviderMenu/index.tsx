@@ -12,7 +12,6 @@ import SkeletonList from '@/features/NavPanel/components/SkeletonList';
 import { useAiInfraStore } from '@/store/aiInfra/store';
 
 import { PROVIDER_MENU_WIDTH } from '../const';
-import AddNew from './AddNew';
 import ProviderList from './List';
 import SearchResult from './SearchResult';
 
@@ -77,7 +76,6 @@ const Layout = memo(({ children, mobile }: ProviderMenuProps) => {
             useAiInfraStore.setState({ providerSearchKeyword: v });
           }}
         />
-        <AddNew />
       </Flexbox>
       {children}
     </Flexbox>

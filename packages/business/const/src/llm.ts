@@ -13,8 +13,8 @@ export const DEFAULT_MINI_PROVIDER = 'openai';
 export const DEFAULT_ASR_MODEL = 'gpt-4o-mini-transcribe';
 export const DEFAULT_ASR_PROVIDER = 'openai';
 
-export const DEFAULT_ONBOARDING_MODEL = 'gemini-3-flash-preview';
-export const DEFAULT_ONBOARDING_PROVIDER = 'google';
+export const DEFAULT_ONBOARDING_MODEL = 'gpt-6-sol';
+export const DEFAULT_ONBOARDING_PROVIDER = 'openai';
 
 /**
  * The model Acceptance review predictions judge evidence screenshots with.
@@ -28,8 +28,8 @@ export const DEFAULT_ONBOARDING_PROVIDER = 'google';
  * stats gathered under it cannot be pooled with the new ones. Treat a swap as
  * opening a new cohort rather than a routine version bump.
  */
-export const DEFAULT_REVIEW_PREDICT_MODEL = 'gemini-3.8-flash';
-export const DEFAULT_REVIEW_PREDICT_PROVIDER = 'google';
+export const DEFAULT_REVIEW_PREDICT_MODEL = 'gpt-6-sol';
+export const DEFAULT_REVIEW_PREDICT_PROVIDER = 'openai';
 
 /**
  * The model the Verify LobeHub LLM calls judge a deliverable with when neither

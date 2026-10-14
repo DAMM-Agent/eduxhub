@@ -88,7 +88,7 @@ describe('videoBackgroundPolling', () => {
     model: 'test-model',
     prechargeResult: { credits: 10 },
     previousGenerationId: 'gen-source',
-    provider: 'test-provider',
+    provider: 'volcengine',
     userId: 'user-xyz',
   };
 
@@ -375,6 +375,17 @@ describe('videoBackgroundPolling', () => {
   });
 
   describe('processBackgroundVideoPolling - error handling', () => {
+    it('marks a legacy provider job as unsupported before initializing a runtime', async () => {
+      await processBackgroundVideoPolling(mockDb, { ...mockParams, provider: 'fal' });
+
+      expect(mockAsyncTaskModel.update).toHaveBeenCalledWith('task-123', {
+        error: { body: { detail: 'UnsupportedProvider' }, name: 'UnsupportedProvider' },
+        status: AsyncTaskStatus.Error,
+      });
+      expect(initModelRuntimeFromDB).not.toHaveBeenCalled();
+      expect(mockModelRuntime.handlePollVideoStatus).not.toHaveBeenCalled();
+    });
+
     it('should handle polling failure with error message', async () => {
       mockModelRuntime.handlePollVideoStatus.mockResolvedValue({
         status: 'failed',

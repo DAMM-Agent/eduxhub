@@ -4,10 +4,10 @@
 
 export const LOBE_CHAT_CLOUD = 'LobeHub Cloud';
 
-export const BRANDING_NAME = 'LobeHub';
-export const BRANDING_LOGO_URL = '';
+export const BRANDING_NAME: string = 'EduxWork';
+export const BRANDING_LOGO_URL = '/app-icons/icon-192x192.png';
 
-export const ORG_NAME = 'LobeHub';
+export const ORG_NAME = 'EduxWork';
 
 export const BRANDING_URL = {
   help: undefined,

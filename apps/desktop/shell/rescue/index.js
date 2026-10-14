@@ -56,23 +56,23 @@ const configureUpdater = (autoUpdater, { channel, feedUrl, logger }) => {
 const strings = (zh) =>
   zh
     ? {
-        checking: 'LobeHub 启动失败，正在检查更新…',
+        checking: 'EduxWork 启动失败，正在检查更新…',
         downloadPage: '打开下载页',
         downloading: (percent) => `正在下载更新… ${percent}%`,
         failed: '检查或下载更新失败',
         installing: '下载完成，正在安装…',
-        latest: 'LobeHub 启动失败，且当前已是最新版本。',
+        latest: 'EduxWork 启动失败，且当前已是最新版本。',
         quit: '退出',
         retryCheck: '重试',
         retryLaunch: '重试启动',
       }
     : {
-        checking: 'LobeHub failed to start. Checking for updates…',
+        checking: 'EduxWork failed to start. Checking for updates…',
         downloadPage: 'Open download page',
         downloading: (percent) => `Downloading update… ${percent}%`,
         failed: 'Failed to check for or download the update',
         installing: 'Download complete. Installing…',
-        latest: 'LobeHub failed to start and is already on the latest version.',
+        latest: 'EduxWork failed to start and is already on the latest version.',
         quit: 'Quit',
         retryCheck: 'Retry',
         retryLaunch: 'Retry launch',
@@ -84,7 +84,7 @@ const createStatusWindow = (text) => {
     maximizable: false,
     minimizable: false,
     resizable: false,
-    title: 'LobeHub',
+    title: 'EduxWork',
     webPreferences: { contextIsolation: true, javascript: true, nodeIntegration: false },
     width: 420,
   });

@@ -100,13 +100,6 @@ const ExceededContextWindowError = dynamic(() => import('./ExceededContextWindow
   ssr: false,
 });
 
-const OllamaBizError = dynamic(() => import('./OllamaBizError'), { loading, ssr: false });
-
-const OllamaSetupGuide = dynamic(() => import('./OllamaSetupGuide'), {
-  loading,
-  ssr: false,
-});
-
 const PlanLimitCard = dynamic(() => import('./PlanLimitCard'), { loading, ssr: false });
 
 const DeprecatedModelError = dynamic(() => import('./DeprecatedModelError'), {
@@ -525,14 +518,6 @@ const ErrorMessageExtra = memo<ErrorExtraProps>(
           return (
             <QuotaLimitError id={data.id} onRetry={canRetry ? handleManualRetry : undefined} />
           );
-        }
-
-        case AgentRuntimeErrorType.OllamaServiceUnavailable: {
-          return <OllamaSetupGuide id={data.id} />;
-        }
-
-        case AgentRuntimeErrorType.OllamaBizError: {
-          return <OllamaBizError {...data} />;
         }
 
         case AgentRuntimeErrorType.ExceededContextWindow: {

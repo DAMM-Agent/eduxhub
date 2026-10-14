@@ -537,7 +537,8 @@ export const INITIAL_STATUS = {
   fileManagerViewMode: 'list' as const,
   filePanelWidth: 320,
   groupAgentBuilderPanelWidth: 360,
-  hiddenHomeWidgets: [],
+  // Eduxwork：默认隐藏首页今日简报、用量与额度、推荐和目标板块。
+  hiddenHomeWidgets: ['news', 'usage', 'suggestions', 'goals'],
   hidePWAInstaller: false,
   hideThreadLimitAlert: false,
   hideTopicSharePrivacyWarning: false,
@@ -561,7 +562,7 @@ export const INITIAL_STATUS = {
   resourceManagerColumnWidths: DEFAULT_RESOURCE_MANAGER_COLUMN_WIDTHS,
   showCommandMenu: false,
   showFilePanel: true,
-  showHomePortrait: true,
+  showHomePortrait: false,
   showHotkeyHelper: false,
   showHomeRail: true,
   showImagePanel: true,

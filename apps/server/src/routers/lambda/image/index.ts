@@ -1,10 +1,9 @@
-import { BRANDING_PROVIDER, ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
-import { isLobeHubModelAvailable } from '@lobechat/business-model-bank/model-config';
+import { ENABLE_BUSINESS_FEATURES } from '@lobechat/business-const';
 import { resolveBusinessModelMapping } from '@lobechat/business-model-runtime';
-import { ChatErrorType } from '@lobechat/types';
 import { TRPCError } from '@trpc/server';
 import debug from 'debug';
 import { and, eq } from 'drizzle-orm';
+import { ModelProviderSchema } from 'model-bank/modelProvider';
 import { z } from 'zod';
 
 import { chargeAfterGenerate } from '@/business/server/image-generation/chargeAfterGenerate';
@@ -14,7 +13,6 @@ import { withScopedPermission } from '@/business/server/trpc-middlewares/rbacPer
 import { wsCompatProcedure } from '@/business/server/trpc-middlewares/workspaceAuth';
 import { AsyncTaskModel } from '@/database/models/asyncTask';
 import { GenerationTopicModel } from '@/database/models/generationTopic';
-import { UserModel } from '@/database/models/user';
 import { type NewGeneration, type NewGenerationBatch } from '@/database/schemas';
 import { asyncTasks, generationBatches, generations } from '@/database/schemas';
 import { router } from '@/libs/trpc/lambda';
@@ -69,7 +67,7 @@ const createImageInputSchema = z.object({
       width: z.number().optional(),
     })
     .passthrough(),
-  provider: z.string(),
+  provider: ModelProviderSchema,
 });
 export type CreateImageServicePayload = z.infer<typeof createImageInputSchema>;
 
@@ -98,23 +96,7 @@ export const imageRouter = router({
 
       log('Starting image creation process, input: %O', input);
 
-      const { resolvedModelId } = await resolveBusinessModelMapping(provider, model);
-
-      // Reject lobehub model ids that are no longer in the model bank so callers get a
-      // clear error instead of an opaque downstream failure when the underlying channel
-      // can't serve the requested id.
-      if (
-        provider === BRANDING_PROVIDER &&
-        !(await isLobeHubModelAvailable(resolvedModelId, 'image', {
-          getUserEmail: async () => (await UserModel.findById(serverDB, userId))?.email,
-        }))
-      ) {
-        throw new TRPCError({
-          cause: { data: { modelType: 'image', requestedModel: model } },
-          code: 'BAD_REQUEST',
-          message: ChatErrorType.LobeHubModelDeprecated,
-        });
-      }
+      await resolveBusinessModelMapping(provider, model);
 
       // Normalize reference image addresses, store S3 keys uniformly (avoid storing expiring presigned URLs in database)
       let configForDatabase = { ...params };

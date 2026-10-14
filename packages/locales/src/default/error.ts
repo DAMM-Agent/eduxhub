@@ -1,4 +1,6 @@
 export default {
+  'response.UnsupportedProvider':
+    'This model provider is no longer supported. Please select another provider.',
   'asyncState.desc': 'Something went wrong while loading. Please try again.',
   'asyncState.metricLabel': 'Failed to load',
   'asyncState.title': 'Failed to load',

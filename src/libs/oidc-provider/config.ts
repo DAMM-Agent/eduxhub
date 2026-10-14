@@ -17,7 +17,7 @@ export const defaultClients: ClientMetadata[] = [
   {
     application_type: 'web',
     client_id: 'lobehub-desktop',
-    client_name: 'LobeHub Desktop',
+    client_name: 'EduxWork Desktop',
     // Only supports authorization code flow
     grant_types: ['authorization_code', 'refresh_token'],
 
@@ -60,7 +60,7 @@ export const defaultClients: ClientMetadata[] = [
   {
     application_type: 'native',
     client_id: 'lobehub-cli',
-    client_name: 'LobeHub CLI',
+    client_name: 'EduxWork CLI',
     grant_types: ['urn:ietf:params:oauth:grant-type:device_code', 'refresh_token'],
     logo_uri: 'https://hub-apac-1.lobeobjects.space/lobehub-desktop-icon.png',
     response_types: [],

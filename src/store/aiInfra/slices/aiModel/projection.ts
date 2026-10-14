@@ -14,7 +14,7 @@ export const aiModelListResource = defineReplica<string, AiProviderModelListItem
   key: (providerId) => providerId,
   name: 'aiModelList',
   storage: 'indexedDB',
-  version: 1,
+  version: 2,
 });
 
 /** Models are addressed by `id` within a provider's list. */

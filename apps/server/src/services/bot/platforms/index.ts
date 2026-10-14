@@ -1,14 +1,14 @@
 // --------------- Core types & utilities ---------------
 // --------------- Registry singleton ---------------
-import { discord } from './discord/definition';
+// import { discord } from './discord/definition';
 import { feishu } from './feishu/definitions/feishu';
 import { lark } from './feishu/definitions/lark';
-import { imessage } from './imessage/definition';
-import { line } from './line/definition';
-import { qq } from './qq/definition';
+// import { imessage } from './imessage/definition';
+// import { line } from './line/definition';
+// import { qq } from './qq/definition';
 import { PlatformRegistry } from './registry';
-import { slack } from './slack/definition';
-import { telegram } from './telegram/definition';
+// import { slack } from './slack/definition';
+// import { telegram } from './telegram/definition';
 import { wechat } from './wechat/definition';
 
 export {
@@ -103,24 +103,24 @@ export type { BotProviderFieldValues, FieldFormatViolation } from './validateFie
 export { collectFieldFormatViolations, formatFieldFormatViolations } from './validateFieldFormats';
 
 // --------------- Platform definitions ---------------
-export { discord } from './discord/definition';
+// export { discord } from './discord/definition';
 export { feishu } from './feishu/definitions/feishu';
 export { lark } from './feishu/definitions/lark';
-export { imessage } from './imessage/definition';
-export { line } from './line/definition';
-export { qq } from './qq/definition';
-export { slack } from './slack/definition';
-export { telegram } from './telegram/definition';
+// export { imessage } from './imessage/definition';
+// export { line } from './line/definition';
+// export { qq } from './qq/definition';
+// export { slack } from './slack/definition';
+// export { telegram } from './telegram/definition';
 export { wechat } from './wechat/definition';
 
 export const platformRegistry = new PlatformRegistry();
 
-platformRegistry.register(discord);
-platformRegistry.register(telegram);
-platformRegistry.register(slack);
+// platformRegistry.register(discord);
+// platformRegistry.register(telegram);
+// platformRegistry.register(slack);
 platformRegistry.register(feishu);
-platformRegistry.register(imessage);
+// platformRegistry.register(imessage);
 platformRegistry.register(lark);
-platformRegistry.register(qq);
+// platformRegistry.register(qq);
 platformRegistry.register(wechat);
-platformRegistry.register(line);
+// platformRegistry.register(line);

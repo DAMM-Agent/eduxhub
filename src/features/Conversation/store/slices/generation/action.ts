@@ -1,6 +1,6 @@
 import { AgentManagementIdentifier } from '@lobechat/builtin-tool-agent-management';
 import { HETERO_CONTINUE_PROMPT, LOADING_FLAT } from '@lobechat/const';
-import { shouldDropUnsupportedClaudeAssistantPrefill } from '@lobechat/model-runtime/providers/anthropic/modelId';
+import { shouldDropUnsupportedClaudeAssistantPrefill } from '@lobechat/model-runtime/anthropicCompatible/modelId';
 import type {
   ChatImageItem,
   ChatTopic,

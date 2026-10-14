@@ -37,7 +37,7 @@ export const genServerAiProvidersConfig = async (
       const staticProviderModels = hasStaticModels ? staticModels[provider] : undefined;
       const aiModels = builtinModels[provider] ?? staticProviderModels ?? [];
 
-      if (provider !== ModelProvider.LobeHub && !hasStaticModels)
+      if (!hasStaticModels)
         throw new Error(
           `Provider [${provider}] not found in aiModels, please make sure you have exported the provider in the \`aiModels/index.ts\``,
         );

@@ -199,13 +199,13 @@ const resolveCredentials = async (
 
 /** Platforms the message tool can reach through a per-agent bot provider. */
 const PROVIDER_PLATFORMS = [
-  'discord',
+  // 'discord',
   'feishu',
-  'imessage',
+  // 'imessage',
   'lark',
-  'qq',
-  'slack',
-  'telegram',
+  // 'qq',
+  // 'slack',
+  // 'telegram',
   'wechat',
 ] as const;
 

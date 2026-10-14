@@ -1,4 +1,5 @@
-import { and, asc, count, eq, ilike, or } from 'drizzle-orm';
+import { and, asc, count, eq, ilike, inArray, or, type SQL } from 'drizzle-orm';
+import { assertModelProvider, SUPPORTED_MODEL_PROVIDERS } from 'model-bank';
 
 import { aiModels } from '@/database/schemas';
 import type { LobeChatDatabase } from '@/database/type';
@@ -48,7 +49,9 @@ export class ModelService extends BaseService {
       }
 
       // Build query conditions
-      const conditions = [];
+      const conditions: (SQL | undefined)[] = [
+        inArray(aiModels.providerId, SUPPORTED_MODEL_PROVIDERS),
+      ];
 
       // Add permission condition directly to the main conditions array
       const permissionWhere = this.buildPermissionWhere(aiModels, permissionResult.condition);
@@ -69,6 +72,7 @@ export class ModelService extends BaseService {
       }
 
       if (provider) {
+        assertModelProvider(provider);
         conditions.push(eq(aiModels.providerId, provider));
       }
 
@@ -94,12 +98,13 @@ export class ModelService extends BaseService {
 
       // Execute query and count in parallel
       const [result, totalResult] = await Promise.all([
-        this.db.query.aiModels.findMany({
-          limit,
-          offset,
-          orderBy: asc(aiModels.sort),
-          where: finalWhereCondition,
-        }),
+        this.db
+          .select()
+          .from(aiModels)
+          .where(finalWhereCondition)
+          .orderBy(asc(aiModels.sort))
+          .limit(limit)
+          .offset(offset),
         this.db.select({ count: count() }).from(aiModels).where(finalWhereCondition),
       ]);
 
@@ -121,6 +126,7 @@ export class ModelService extends BaseService {
     this.log('info', '获取模型详情', { modelId, providerId, userId: this.userId });
 
     try {
+      assertModelProvider(providerId);
       const permissionResult = await this.resolveOperationPermission('AI_MODEL_READ', {
         targetModelId: modelId,
       });
@@ -153,6 +159,7 @@ export class ModelService extends BaseService {
     this.log('info', '创建模型', { payload, userId: this.userId });
 
     try {
+      assertModelProvider(payload.providerId);
       const permissionResult = await this.resolveOperationPermission('AI_MODEL_CREATE');
       if (!permissionResult.isPermitted) {
         throw this.createAuthorizationError(permissionResult.message || '无权创建模型');
@@ -215,6 +222,7 @@ export class ModelService extends BaseService {
     this.log('info', '更新模型', { modelId, payload, providerId, userId: this.userId });
 
     try {
+      assertModelProvider(providerId);
       const permissionResult = await this.resolveOperationPermission('AI_MODEL_UPDATE', {
         targetModelId: modelId,
       });

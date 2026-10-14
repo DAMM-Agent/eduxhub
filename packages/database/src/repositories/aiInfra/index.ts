@@ -1,4 +1,3 @@
-import { BRANDING_PROVIDER } from '@lobechat/business-const';
 import { loadModels } from '@lobechat/business-model-bank/model-config';
 import type {
   AiProviderDetailItem,
@@ -11,7 +10,9 @@ import { isEmpty } from 'es-toolkit/compat';
 import type { AIChatModelCard, AiProviderModelListItem, EnabledAiModel } from 'model-bank';
 import {
   AiModelSourceEnum,
+  assertModelProvider,
   isAiModelVisible,
+  isModelProvider,
   normalizeAiModelType,
   resolveModelSearchDefaultSettings,
 } from 'model-bank';
@@ -110,7 +111,9 @@ export class AiInfraRepos {
       source: 'builtin',
     })) as AiProviderListItem[];
 
-    const mergedProviders = mergeArrayById(builtinProviders, userProviders);
+    const mergedProviders = mergeArrayById(builtinProviders, userProviders).filter((provider) =>
+      isModelProvider(provider.id),
+    );
 
     // 3. Sort based on orderMap
     return mergedProviders.sort((a, b) => {
@@ -200,7 +203,7 @@ export class AiInfraRepos {
     // Exclude models already handled in builtinModelList to avoid duplicates
     const appendedUserModels = allModels
       .filter((item) => {
-        if (item.providerId === BRANDING_PROVIDER) return false;
+        if (!isModelProvider(item.providerId)) return false;
         if (builtinModelKeys.has(`${item.providerId}:${item.id}`)) return false;
         return filterEnabled ? enabledProviderIds.has(item.providerId) && item.enabled : true;
       })
@@ -278,10 +281,12 @@ export class AiInfraRepos {
   ): Promise<string> {
     const { modelId, fallbackProvider, preferredModels, preferredProviders, label } = options;
 
+    if (fallbackProvider) assertModelProvider(normalizeProvider(fallbackProvider));
+
     // Build a map of provider -> enabled model ids for quick membership checks; skip disabled models entirely
     const providerModels = runtimeState.enabledAiModels.reduce<Record<string, Set<string>>>(
       (acc, model) => {
-        if (model.enabled === false) return acc;
+        if (model.enabled === false || !isModelProvider(model.providerId)) return acc;
 
         const providerId = normalizeProvider(model.providerId);
         acc[providerId] = acc[providerId] || new Set<string>();
@@ -295,7 +300,7 @@ export class AiInfraRepos {
     // Normalize preferred providers so ordering is stable and comparisons are case-insensitive
     const normalizedPreferredProviders = (preferredProviders || [])
       .map(normalizeProvider)
-      .filter(Boolean);
+      .filter((provider): boolean => isModelProvider(provider));
 
     // Provider search pipeline:
     // 1) iterate preferred providers (if given)
@@ -377,11 +382,8 @@ export class AiInfraRepos {
       m.type = normalizeAiModelType(m.type);
     }
 
-    // Filter out DB residual models that are no longer in the builtin list for branding provider
+    // Keep preference-only rows only when their builtin model is still available.
     const builtinIds = new Set(defaultModels.map((m) => m.id));
-    if (providerId === BRANDING_PROVIDER) {
-      mergedModel = mergedModel.filter((m) => builtinIds.has(m.id));
-    }
 
     // Preference-only shells — rows persisting just `config.chatConfig` (created
     // by updateModelReasoningConfig, or left behind when clearRemoteModels
@@ -436,6 +438,7 @@ export class AiInfraRepos {
   private fetchBuiltinModels = async (
     providerId: string,
   ): Promise<AiProviderModelListItem[] | undefined> => {
+    assertModelProvider(providerId);
     try {
       // use the serverModelLists as the defined server model list
       // fallback to empty array for custom provider

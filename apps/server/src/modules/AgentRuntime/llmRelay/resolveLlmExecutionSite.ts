@@ -1,13 +1,11 @@
 import type { AgentState } from '@lobechat/agent-runtime';
-import { BRANDING_PROVIDER } from '@lobechat/business-const';
 import debug from 'debug';
-import { ModelProvider } from 'model-bank';
+import { assertModelProvider } from 'model-bank/modelProvider';
 import { isProviderFetchOnClient } from 'model-bank/modelProviders';
 
 import { AiProviderModel } from '@/database/models/aiProvider';
 import type { LobeChatDatabase } from '@/database/type';
 import { getServerFeatureFlagsStateFromRuntimeConfig } from '@/server/featureFlags';
-import { getServerFetchOnClientOverride } from '@/server/globalConfig/serverFetchOnClient';
 import { KeyVaultsGateKeeper } from '@/server/modules/KeyVaultsEncrypt';
 import { resolveRuntimeProvider } from '@/server/modules/ModelRuntime';
 
@@ -42,8 +40,7 @@ export interface ResolveProviderRelayParams {
  * Whether calls to `provider` must run on the user's device, i.e. be relayed:
  * the relay is on for the user, the provider is not platform-owned, and the
  * shared `fetchOnClient` rule — the one the client store applies, on the
- * user's config with this deployment's override (desktop, `OLLAMA_PROXY_URL`)
- * as the default — sends it to the device. `undefined` keeps it on the server.
+ * user's config — sends it to the device. `undefined` keeps it on the server.
  */
 export const resolveProviderRelay = async ({
   db,
@@ -51,7 +48,7 @@ export const resolveProviderRelay = async ({
   userId,
   workspaceId,
 }: ResolveProviderRelayParams): Promise<{ runtimeProvider: string } | undefined> => {
-  if (provider === BRANDING_PROVIDER || provider === ModelProvider.LobeHub) return;
+  assertModelProvider(provider);
 
   const featureFlags = await getServerFeatureFlagsStateFromRuntimeConfig(userId);
   if (!featureFlags.enableLlmRelay) return;
@@ -61,7 +58,7 @@ export const resolveProviderRelay = async ({
     KeyVaultsGateKeeper.getUserKeyVaults,
   );
   const fetchOnClient = isProviderFetchOnClient(provider, {
-    fetchOnClient: config?.fetchOnClient ?? getServerFetchOnClientOverride(provider),
+    fetchOnClient: config?.fetchOnClient,
     keyVaults: config?.keyVaults as { apiKey?: string; baseURL?: string } | undefined,
   });
 
@@ -92,6 +89,7 @@ export const resolveLlmExecutionSite = async ({
   userId,
   workspaceId,
 }: ResolveLlmExecutionSiteParams): Promise<LlmExecutionSite> => {
+  assertModelProvider(provider);
   if (state?.principal?.actor?.shareVisitor) return SERVER;
 
   const relay = await resolveProviderRelay({ db, provider, userId, workspaceId });

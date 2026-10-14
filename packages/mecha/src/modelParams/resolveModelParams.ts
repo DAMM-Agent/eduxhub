@@ -1,4 +1,3 @@
-import { BRANDING_PROVIDER } from '@lobechat/business-const/branding';
 import {
   isDeepSeekThinkingEligibleModel,
   isDeepSeekV4FamilyModel,
@@ -15,7 +14,6 @@ import {
   type ExtendParamsType,
   MODEL_REASONING_EXTEND_PARAMS,
 } from 'model-bank';
-import { ModelProvider } from 'model-bank/modelProvider';
 
 import type {
   FrozenModelFacts,
@@ -211,24 +209,12 @@ export const resolveModelParams = async (
   const { model, provider } = request;
   const chatConfig: LobeAgentChatConfig | undefined = request.agent.chatConfig ?? undefined;
   const extendParamList = await resolveModelExtendParamList(request, providers);
-  const {
-    canonicalModelCard,
-    modelCard,
-    modelExtendParams,
-    modelHasReasoningExtendParams,
-    userModelRow,
-  } = extendParamList;
+  const { modelCard, modelExtendParams, modelHasReasoningExtendParams, userModelRow } =
+    extendParamList;
 
-  const modelKnowledgeCutoff =
-    modelCard?.knowledgeCutoff ??
-    (provider === ModelProvider.LobeHub ? canonicalModelCard?.knowledgeCutoff : undefined) ??
-    undefined;
+  const modelKnowledgeCutoff = modelCard?.knowledgeCutoff ?? undefined;
   // A user-set display name wins, matching the client list merge.
-  const modelDisplayName =
-    userModelRow?.displayName ??
-    modelCard?.displayName ??
-    (provider === ModelProvider.LobeHub ? canonicalModelCard?.displayName : undefined) ??
-    undefined;
+  const modelDisplayName = userModelRow?.displayName ?? modelCard?.displayName ?? undefined;
 
   // Only read the reasoning sources when the model can actually consume them
   // (`applyModelExtendParams` ignores them otherwise) — this runs on every
@@ -253,8 +239,7 @@ export const resolveModelParams = async (
     Array.isArray(modelExtendParams) && modelExtendParams.includes('preserveThinking');
   // Kimi K2.7+ Code has preserved thinking always active and cannot opt out.
   const kimiForcesPreserveThinking =
-    (provider === 'moonshot' || provider === BRANDING_PROVIDER) &&
-    isKimiAlwaysPreserveThinkingModel(model);
+    provider === 'moonshot' && isKimiAlwaysPreserveThinkingModel(model);
   // DeepSeek V4 / reasoner thinking models MUST replay the real assistant
   // reasoning: their Anthropic-compatible API rejects an assistant tool-call
   // turn whose thinking block is missing, and a placeholder block makes the
@@ -267,12 +252,7 @@ export const resolveModelParams = async (
       effectiveChatConfig?.deepseekV4ReasoningEffort === 'none');
   const deepseekForcesPreserveThinking =
     isDeepSeekThinkingEligibleModel(model) && !deepseekV4ThinkingDisabled;
-  // Meta always uses Responses with stateless encrypted reasoning replay; the
-  // opaque continuation state must survive history building and tool loops
-  // independently of the user's visible-thinking preference.
-  const metaForcesPreserveThinking = provider === ModelProvider.Meta;
-  const modelForcesPreserveThinking =
-    kimiForcesPreserveThinking || deepseekForcesPreserveThinking || metaForcesPreserveThinking;
+  const modelForcesPreserveThinking = kimiForcesPreserveThinking || deepseekForcesPreserveThinking;
   const providerSupportsPreserveThinkingFallback =
     provider === 'qwen' || provider === 'zhipu' || provider === 'moonshot';
   const modelSupportsPreserveThinking =

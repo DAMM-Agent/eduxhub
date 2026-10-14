@@ -348,6 +348,18 @@ export const ERROR_CODE_SPECS: SpecMap = {
     description: 'Upstream rejected the request for exceeding its per-request image count limit.',
   },
   // —— Cloud-only (tier 9) ——
+  [AgentRuntimeErrorType.UnsupportedProvider]: {
+    code: AgentRuntimeErrorType.UnsupportedProvider,
+    numericId: 4008,
+    category: 'request',
+    severity: 'warning',
+    attribution: 'user',
+    httpStatus: 400,
+    retryable: false,
+    routeFallback: false,
+    countAsFailure: false,
+    description: 'The selected provider is no longer supported by this product.',
+  },
   [ChatErrorType.LobeHubModelDeprecated]: {
     code: ChatErrorType.LobeHubModelDeprecated,
     numericId: 4901,

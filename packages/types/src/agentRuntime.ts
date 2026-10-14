@@ -212,6 +212,7 @@ export const AgentRuntimeErrorType = {
    * typically because the user has not added an API key or enabled a provider.
    */
   NoAvailableProvider: 'NoAvailableProvider',
+  UnsupportedProvider: 'UnsupportedProvider',
 
   AccountDeactivated: 'AccountDeactivated',
   /**

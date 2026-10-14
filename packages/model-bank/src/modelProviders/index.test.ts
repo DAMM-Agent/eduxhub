@@ -66,10 +66,15 @@ describe('model provider predicates', () => {
 });
 
 describe('isProviderFetchOnClient', () => {
-  it('runs a local provider on the device unless fetchOnClient says otherwise', () => {
-    expect(isProviderFetchOnClient('lmstudio', undefined)).toBe(true);
-    expect(isProviderFetchOnClient('ollama', { keyVaults: {} })).toBe(true);
-    expect(isProviderFetchOnClient('lmstudio', { fetchOnClient: false })).toBe(false);
+  it('never executes a removed provider on the device, even with saved credentials', () => {
+    expect(isProviderFetchOnClient('lmstudio', undefined)).toBe(false);
+    expect(isProviderFetchOnClient('ollama', { keyVaults: {} })).toBe(false);
+    expect(
+      isProviderFetchOnClient('lmstudio', {
+        fetchOnClient: true,
+        keyVaults: { apiKey: 'old-key', baseURL: 'http://localhost:1234/v1' },
+      }),
+    ).toBe(false);
   });
 
   it('runs on the server without an endpoint or a key', () => {

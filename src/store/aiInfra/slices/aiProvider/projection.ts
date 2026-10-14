@@ -38,7 +38,7 @@ export const aiProviderListResource = defineReplica<Record<string, never>, AiPro
   key: () => AI_PROVIDER_LIST_KEY,
   name: 'aiProviderList',
   storage: 'indexedDB',
-  version: 1,
+  version: 2,
 });
 
 /**
@@ -62,7 +62,7 @@ export const aiProviderDetailResource = defineReplica<
   key: (id) => id,
   name: 'aiProviderDetail',
   storage: 'memory',
-  version: 1,
+  version: 2,
 });
 
 /** Runtime-state entry identity: the login flag is the only query dimension. */
@@ -101,5 +101,5 @@ export const aiProviderRuntimeStateResource = defineReplica<
   key: aiProviderRuntimeStateQueryKey,
   name: 'aiProviderRuntimeState',
   storage: 'memory',
-  version: 1,
+  version: 2,
 });

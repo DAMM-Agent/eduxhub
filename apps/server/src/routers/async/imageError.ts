@@ -46,6 +46,13 @@ export const categorizeImageGenerationError = ({
   isEditingImage,
   providerContentPolicyMessage,
 }: CategorizeImageGenerationErrorOptions): CategorizedImageGenerationError => {
+  if (error.errorType === AgentRuntimeErrorType.UnsupportedProvider) {
+    return {
+      errorMessage: AgentRuntimeErrorType.UnsupportedProvider,
+      errorType: AsyncTaskErrorType.UnsupportedProvider,
+    };
+  }
+
   // Handle Comfy UI errors
   if (error.errorType === AgentRuntimeErrorType.ComfyUIServiceUnavailable) {
     return {

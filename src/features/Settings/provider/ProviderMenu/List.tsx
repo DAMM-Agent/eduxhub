@@ -81,7 +81,7 @@ const ProviderList = (props: {
   const [open, setOpen] = useState(false);
 
   // Accordion states - using array of active keys
-  const [expandedKeys, setExpandedKeys] = useState<string[]>(['enabled', 'custom', 'disabled']);
+  const [expandedKeys, setExpandedKeys] = useState<string[]>(['enabled', 'disabled']);
 
   const [sortType, updateSystemStatus] = useGlobalStore((s) => [
     systemStatusSelectors.disabledModelProvidersSortType(s),
@@ -107,11 +107,6 @@ const ProviderList = (props: {
 
   const disabledModelProviderList = useAiInfraStore(
     aiProviderSelectors.disabledAiProviderList,
-    isEqual,
-  );
-
-  const disabledCustomProviderList = useAiInfraStore(
-    aiProviderSelectors.disabledCustomAiProviderList,
     isEqual,
   );
 
@@ -176,14 +171,6 @@ const ProviderList = (props: {
             <ProviderItem {...item} key={item.id} onClick={onProviderSelect} />
           ))}
         </ProviderSection>
-
-        {disabledCustomProviderList.length > 0 && (
-          <ProviderSection contextMenuItems={[]} title={t('menu.list.custom')} value="custom">
-            {disabledCustomProviderList.map((item) => (
-              <ProviderItem {...item} key={item.id} onClick={onProviderSelect} />
-            ))}
-          </ProviderSection>
-        )}
 
         <ProviderSection
           action={canSortDisabled ? <Actions dropdownMenu={dropdownMenu} /> : undefined}

@@ -8,6 +8,7 @@ import type {
   PullModelParams,
 } from '@lobechat/model-runtime';
 import debug from 'debug';
+import { assertModelProvider } from 'model-bank/modelProvider';
 
 import type { LobeChatDatabase } from '@/database/type';
 import { initModelRuntimeFromDB } from '@/server/modules/ModelRuntime';
@@ -140,6 +141,7 @@ export const initModelRuntimeForRequest = async (
   provider: string,
   { deadlines, workspaceId }: InitModelRuntimeForRequestOptions = {},
 ): Promise<RequestModelRuntime> => {
+  assertModelProvider(provider);
   const relay = await resolveProviderRelay({ db, provider, userId, workspaceId });
   if (!relay) return initModelRuntimeFromDB(db, userId, provider, workspaceId);
 

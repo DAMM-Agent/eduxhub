@@ -9,7 +9,6 @@ import { systemStatusSelectors } from '@/store/global/selectors';
 import { useUserStore } from '@/store/user';
 import { authSelectors } from '@/store/user/slices/auth/selectors';
 
-import CustomizeButton from './CustomizeButton';
 import RailToggle from './RailToggle';
 import { canHostRail } from './railVisibility';
 
@@ -40,7 +39,9 @@ const HomeNavHeader = memo(() => {
       right={
         isLogin && isStatusInit ? (
           <Flexbox horizontal align={'center'} gap={4}>
+            {/* Eduxwork：统一隐藏首页自定义按钮。
             <CustomizeButton />
+            */}
             {canHostRail(hiddenWidgets, usageActive) && (
               <RailToggle railVisible={showHomeRail} onToggle={toggleHomeRail} />
             )}

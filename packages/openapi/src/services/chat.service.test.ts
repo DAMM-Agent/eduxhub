@@ -42,11 +42,11 @@ vi.mock('@/utils/rbac', () => ({ getScopePermissions: () => [] }));
 // that barrel re-exports `DEFAULT_MODEL` only, and a factory mock happily
 // invents any key asked of it.
 const DEFAULT_MODEL = 'default-model-from-const';
-const DEFAULT_PROVIDER = 'default-provider-from-const';
+const DEFAULT_PROVIDER = 'deepseek';
 
 vi.mock('@lobechat/business-const', () => ({
   DEFAULT_MODEL: 'default-model-from-const',
-  DEFAULT_PROVIDER: 'default-provider-from-const',
+  DEFAULT_PROVIDER: 'deepseek',
 }));
 vi.mock('@/const/settings', () => ({
   DEFAULT_AGENT_CHAT_CONFIG: {},
@@ -74,7 +74,7 @@ describe('ChatService payload construction', () => {
     // Bypass permission + credential resolution; only the payload is under test.
     (service as any).resolveOperationPermission = vi.fn().mockResolvedValue({ isPermitted: true });
     (service as any).getApiKey = vi.fn().mockResolvedValue(JSON.stringify({ apiKey: 'k' }));
-    (service as any).config = { defaultModel: 'm', defaultProvider: 'p' };
+    (service as any).config = { defaultModel: 'm', defaultProvider: 'openai' };
     return service;
   };
 
@@ -117,7 +117,7 @@ describe('ChatService payload construction', () => {
     await buildService('workspace-1').chat({ messages } as any);
 
     expect(initModelRuntimeWithUserPayloadMock).toHaveBeenCalledWith(
-      'p',
+      'openai',
       { apiKey: 'k', userId: 'user-1' },
       { workspaceId: 'workspace-1' },
       undefined,
@@ -193,6 +193,27 @@ describe('ChatService.getApiKey provider credentials', () => {
     await expect(apiKey(serviceWith([{ id: 'openai', keyVaults: null }]))).resolves.toBe('{}');
     expect(decrypt).not.toHaveBeenCalled();
   });
+
+  it.each(['anthropic', 'google', 'custom-provider'])(
+    'rejects %s before decrypting old credentials or initializing a runtime',
+    async (provider) => {
+      const service = serviceWith([{ id: provider, keyVaults: 'legacy-encrypted-key' }]);
+      await expect(
+        service.chat({
+          messages: [{ content: 'hi', role: 'user' }],
+          model: 'legacy-model',
+          provider,
+        }),
+      ).rejects.toMatchObject({
+        errorType: 'UnsupportedProvider',
+        provider,
+      });
+
+      expect(decrypt).not.toHaveBeenCalled();
+      expect(initModelRuntimeWithUserPayloadMock).not.toHaveBeenCalled();
+      expect(chatMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('falls back to an empty vault when no row exists', async () => {
     await expect(apiKey(serviceWith([]))).resolves.toBe('{}');

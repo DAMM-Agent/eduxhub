@@ -242,16 +242,16 @@ describe('AiModelModel', () => {
     });
 
     it('should merge config instead of replacing it, preserving chatConfig', async () => {
-      const { id } = await aiProviderModel.create({ id: 'gpt-5.6-sol', providerId: 'azure' });
-      await aiProviderModel.updateModelReasoningConfig(id, 'azure', {
+      const { id } = await aiProviderModel.create({ id: 'gpt-5.6-sol', providerId: 'volcengine' });
+      await aiProviderModel.updateModelReasoningConfig(id, 'volcengine', {
         gpt5_6ReasoningEffort: 'high',
       });
 
       // The old model-config modal only knows deploymentName; saving it must not
       // wipe the sibling chatConfig namespace.
-      await aiProviderModel.update(id, 'azure', { config: { deploymentName: 'my-deploy' } });
+      await aiProviderModel.update(id, 'volcengine', { config: { deploymentName: 'my-deploy' } });
 
-      const row = await aiProviderModel.findByIdAndProvider(id, 'azure');
+      const row = await aiProviderModel.findByIdAndProvider(id, 'volcengine');
       expect(row!.config).toEqual({
         chatConfig: { gpt5_6ReasoningEffort: 'high' },
         deploymentName: 'my-deploy',
@@ -325,7 +325,7 @@ describe('AiModelModel', () => {
       await workspaceAiModelModel.updateModelReasoningConfig('gpt-5.6-sol', 'openai', {
         gpt5_6ReasoningEffort: 'low',
       });
-      await aiProviderModel.updateModelReasoningConfig('claude-opus-5', 'anthropic', {
+      await aiProviderModel.updateModelReasoningConfig('claude-opus-5', 'minimax', {
         reasoningMode: 'pro',
       });
       // A row without chatConfig is not a saved preference
@@ -339,7 +339,7 @@ describe('AiModelModel', () => {
       );
 
       const expected = {
-        'anthropic/claude-opus-5': { reasoningMode: 'pro' },
+        'minimax/claude-opus-5': { reasoningMode: 'pro' },
         'openai/gpt-5.6-sol': { gpt5_6ReasoningEffort: 'low' },
       };
       expect(await aiProviderModel.getAllModelReasoningConfigs()).toEqual(expected);
@@ -352,7 +352,9 @@ describe('AiModelModel', () => {
         gpt5_6ReasoningEffort: 'high',
       });
 
-      expect(await aiProviderModel.getModelReasoningConfig('gpt-5.6-sol', 'azure')).toBeUndefined();
+      expect(
+        await aiProviderModel.getModelReasoningConfig('gpt-5.6-sol', 'volcengine'),
+      ).toBeUndefined();
 
       const otherUserModel = new AiModelModel(serverDB, 'user2');
       expect(await otherUserModel.getModelReasoningConfig('gpt-5.6-sol', 'openai')).toBeUndefined();
@@ -503,7 +505,7 @@ describe('AiModelModel', () => {
       });
       await aiProviderModel.create({
         id: 'model2',
-        providerId: 'anthropic',
+        providerId: 'minimax',
       });
 
       const models = await aiProviderModel.getModelListByProviderId('openai');
@@ -516,7 +518,7 @@ describe('AiModelModel', () => {
     it('should only return enabled models', async () => {
       await serverDB.insert(aiModels).values([
         { id: 'model1', providerId: 'openai', enabled: true, source: 'custom', userId },
-        { id: 'model2', providerId: 'b', enabled: false, source: 'custom', userId },
+        { id: 'model2', providerId: 'qwen', enabled: false, source: 'custom', userId },
       ]);
 
       const models = await aiProviderModel.getAllModels();
@@ -1303,15 +1305,15 @@ describe('AiModelModel', () => {
       await serverDB.insert(aiModels).values([
         { id: 'remote1', providerId: 'openai', source: 'remote', userId },
         { id: 'custom1', providerId: 'openai', source: 'custom', userId },
-        { id: 'model1', providerId: 'anthropic', source: 'remote', userId },
-        { id: 'model2', providerId: 'anthropic', source: 'custom', userId },
+        { id: 'model1', providerId: 'minimax', source: 'remote', userId },
+        { id: 'model2', providerId: 'minimax', source: 'custom', userId },
       ]);
 
       await aiProviderModel.clearModelsByProvider('openai');
 
       const remainingModels = await aiProviderModel.query();
       expect(remainingModels).toHaveLength(2);
-      expect(remainingModels.every((m) => m.providerId === 'anthropic')).toBe(true);
+      expect(remainingModels.every((m) => m.providerId === 'minimax')).toBe(true);
     });
 
     it('should only delete models for the current user', async () => {

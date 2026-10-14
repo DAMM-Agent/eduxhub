@@ -17,8 +17,6 @@ export const DEDICATED_ERROR_CARD_TYPES = [
   ChatErrorType.LobeHubModelDeprecated,
   AgentRuntimeErrorType.QuotaLimitReached,
   AgentRuntimeErrorType.RateLimitExceeded,
-  AgentRuntimeErrorType.OllamaServiceUnavailable,
-  AgentRuntimeErrorType.OllamaBizError,
   AgentRuntimeErrorType.ExceededContextWindow,
   AgentRuntimeErrorType.NoOpenAIAPIKey,
 ] as const;

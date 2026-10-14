@@ -4,7 +4,7 @@ import { resolveLocalSystemManifest } from '@lobechat/builtin-tool-local-system'
 import type * as LobeChatConst from '@lobechat/const';
 import { type LobeChatPluginApi, type UIChatMessage } from '@lobechat/types';
 import { act, renderHook } from '@testing-library/react';
-import { type EnabledAiModel, ModelProvider } from 'model-bank';
+import { type EnabledAiModel } from 'model-bank';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as toolEngineering from '@/helpers/toolEngineering';
@@ -1564,7 +1564,7 @@ describe('StreamingExecutor actions', () => {
           {
             abilities: { audio: true, functionCall: true, video: true, vision: true },
             id: 'gemini-3.1-flash-lite-preview',
-            providerId: ModelProvider.Google,
+            providerId: 'google',
             type: 'chat',
           } as EnabledAiModel,
         ],
@@ -1596,7 +1596,7 @@ describe('StreamingExecutor actions', () => {
       vi.spyOn(agentConfigResolver, 'resolveAgentConfig').mockReturnValue({
         agentConfig: createMockAgentConfig({
           model: 'gemini-3.1-flash-lite-preview',
-          provider: ModelProvider.LobeHub,
+          provider: 'lobehub',
         }),
         chatConfig: createMockChatConfig(),
         isBuiltinAgent: false,

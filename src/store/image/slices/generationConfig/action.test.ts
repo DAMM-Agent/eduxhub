@@ -4,10 +4,12 @@ import {
   type ModelParamsSchema,
   type RuntimeImageGenParams,
 } from 'model-bank';
-import { extractDefaultValues, fluxSchnellParamsSchema } from 'model-bank';
+import { extractDefaultValues } from 'model-bank';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useImageStore } from '@/store/image';
+
+import { pixelModelSchema } from './fixtures.test-utils';
 
 const localStorageMock = vi.hoisted(() => {
   let store: Record<string, string> = {};
@@ -61,10 +63,10 @@ const sizeOnlyModelSchema: ModelParamsSchema = {
 
 const testImageModels: AIImageModelCard[] = [
   {
-    id: 'flux/schnell',
-    displayName: 'FLUX.1 Schnell',
+    id: 'test-pixel-model',
+    displayName: 'Pixel Test Model',
     type: 'image',
-    parameters: fluxSchnellParamsSchema,
+    parameters: pixelModelSchema,
     releasedAt: '2024-08-01',
   },
   {
@@ -96,8 +98,8 @@ const testImageModels: AIImageModelCard[] = [
 
 const mockProviders = [
   {
-    id: 'fal',
-    name: 'Fal',
+    id: 'openai',
+    name: 'OpenAI',
     children: [testImageModels[0]],
   },
   {
@@ -126,7 +128,7 @@ vi.mock('@/store/aiInfra', () => ({
 }));
 
 // Test data
-const fluxSchnellDefaultValues = extractDefaultValues(fluxSchnellParamsSchema);
+const pixelModelDefaultValues = extractDefaultValues(pixelModelSchema);
 const customModelDefaultValues = extractDefaultValues(customModelSchema);
 
 const initialTestState = {
@@ -228,20 +230,20 @@ describe('GenerationConfigAction', () => {
   });
 
   describe('Model and Provider Selection', () => {
-    it('should set complete configuration for flux/schnell model', () => {
+    it('should set complete configuration for test-pixel-model model', () => {
       const { result } = renderHook(() => useImageStore());
 
       act(() => {
-        result.current.setModelAndProviderOnSelect('flux/schnell', 'fal');
+        result.current.setModelAndProviderOnSelect('test-pixel-model', 'openai');
       });
 
-      expect(result.current.model).toBe('flux/schnell');
-      expect(result.current.provider).toBe('fal');
+      expect(result.current.model).toBe('test-pixel-model');
+      expect(result.current.provider).toBe('openai');
       expect(result.current.parameters).toEqual({
-        ...fluxSchnellDefaultValues,
+        ...pixelModelDefaultValues,
         prompt: 'initial prompt',
       });
-      expect(result.current.parametersSchema).toEqual(fluxSchnellParamsSchema);
+      expect(result.current.parametersSchema).toEqual(pixelModelSchema);
     });
 
     it('should handle custom model configuration', () => {
@@ -372,29 +374,29 @@ describe('GenerationConfigAction', () => {
       };
 
       act(() => {
-        result.current.reuseSettings('flux/schnell', 'fal', customSettings);
+        result.current.reuseSettings('test-pixel-model', 'openai', customSettings);
       });
 
-      expect(result.current.model).toBe('flux/schnell');
-      expect(result.current.provider).toBe('fal');
+      expect(result.current.model).toBe('test-pixel-model');
+      expect(result.current.provider).toBe('openai');
       expect(result.current.parameters).toEqual({
-        ...fluxSchnellDefaultValues,
+        ...pixelModelDefaultValues,
         ...customSettings,
       });
-      expect(result.current.parametersSchema).toEqual(fluxSchnellParamsSchema);
+      expect(result.current.parametersSchema).toEqual(pixelModelSchema);
     });
 
     it('should handle empty and null settings', () => {
       const { result } = renderHook(() => useImageStore());
 
       act(() => {
-        result.current.reuseSettings('flux/schnell', 'fal', {});
+        result.current.reuseSettings('test-pixel-model', 'openai', {});
       });
 
-      expect(result.current.parameters).toEqual(fluxSchnellDefaultValues);
+      expect(result.current.parameters).toEqual(pixelModelDefaultValues);
 
       act(() => {
-        result.current.reuseSettings('flux/schnell', 'fal', { seed: null, imageUrl: null });
+        result.current.reuseSettings('test-pixel-model', 'openai', { seed: null, imageUrl: null });
       });
 
       expect(result.current.parameters?.seed).toBeNull();
@@ -652,8 +654,8 @@ describe('GenerationConfigAction', () => {
         useGlobalStore: {
           getState: () => ({
             status: {
-              lastSelectedImageModel: 'flux/schnell',
-              lastSelectedImageProvider: 'fal',
+              lastSelectedImageModel: 'test-pixel-model',
+              lastSelectedImageProvider: 'openai',
             },
           }),
         },
@@ -677,12 +679,12 @@ describe('GenerationConfigAction', () => {
       });
 
       act(() => {
-        result.current.initializeImageConfig(true, 'flux/schnell', 'fal');
+        result.current.initializeImageConfig(true, 'test-pixel-model', 'openai');
       });
 
-      expect(result.current.model).toBe('flux/schnell');
-      expect(result.current.provider).toBe('fal');
-      expect(result.current.parameters).toEqual(fluxSchnellDefaultValues);
+      expect(result.current.model).toBe('test-pixel-model');
+      expect(result.current.provider).toBe('openai');
+      expect(result.current.parameters).toEqual(pixelModelDefaultValues);
       expect(result.current.isInit).toBe(true);
       expect(result.current.imageNum).toBe(6);
     });

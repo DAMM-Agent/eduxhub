@@ -12,14 +12,14 @@ describe('loadModels', () => {
     const loader = vi.fn().mockResolvedValue([
       {
         enabled: true,
-        id: 'injected-lobehub-model',
+        id: 'injected-openai-model',
         type: 'chat',
       },
     ]);
 
     const models = await loadModels({
       providerLoaders: {
-        [ModelProvider.LobeHub]: loader,
+        [ModelProvider.OpenAI]: loader,
       },
     });
 
@@ -28,8 +28,8 @@ describe('loadModels', () => {
       expect.arrayContaining([
         expect.objectContaining({
           enabled: true,
-          id: 'injected-lobehub-model',
-          providerId: ModelProvider.LobeHub,
+          id: 'injected-openai-model',
+          providerId: ModelProvider.OpenAI,
           source: 'builtin',
           type: 'chat',
         }),
@@ -41,7 +41,7 @@ describe('loadModels', () => {
     await expect(
       loadModels({
         providerLoaders: {
-          [ModelProvider.LobeHub]: undefined,
+          [ModelProvider.OpenAI]: undefined,
         },
       }),
     ).resolves.toBe(LOBE_DEFAULT_MODEL_LIST);
@@ -53,7 +53,7 @@ describe('loadModels', () => {
     await expect(
       loadModels({
         providerLoaders: {
-          [ModelProvider.LobeHub]: loader,
+          [ModelProvider.OpenAI]: loader,
         },
       }),
     ).rejects.toThrow('model config missing');
@@ -61,27 +61,11 @@ describe('loadModels', () => {
 });
 
 describe('knowledgeCutoff backfill', () => {
-  it('fills knowledgeCutoff from the canonical map for builtin models', () => {
-    const fable = LOBE_DEFAULT_MODEL_LIST.find(
-      (m) => m.providerId === 'anthropic' && m.id === 'claude-fable-5',
+  it('fills knowledgeCutoff from the canonical map for retained models', () => {
+    const model = LOBE_DEFAULT_MODEL_LIST.find(
+      (m) => m.providerId === 'openai' && m.id === 'gpt-5-mini',
     );
-    expect(fable?.knowledgeCutoff).toBe('2026-01');
-
-    const opus = LOBE_DEFAULT_MODEL_LIST.find(
-      (m) => m.providerId === 'anthropic' && m.id === 'claude-opus-4-8',
-    );
-    expect(opus?.knowledgeCutoff).toBe('2026-01');
-
-    // aggregator spelling of the same model gets the same cutoff
-    const bedrockOpus = LOBE_DEFAULT_MODEL_LIST.find(
-      (m) => m.providerId === 'bedrock' && m.id === 'global.anthropic.claude-opus-4-7',
-    );
-    expect(bedrockOpus?.knowledgeCutoff).toBe('2026-01');
-
-    const vertexGemini3Pro = LOBE_DEFAULT_MODEL_LIST.find(
-      (m) => m.providerId === 'vertexai' && m.id === 'gemini-3-pro-preview',
-    );
-    expect(vertexGemini3Pro?.knowledgeCutoff).toBe('2025-01');
+    expect(model?.knowledgeCutoff).toBe('2024-05');
   });
 
   it('keeps an explicit knowledgeCutoff over the map value', async () => {
@@ -91,25 +75,12 @@ describe('knowledgeCutoff backfill', () => {
     ]);
 
     const models = await loadModels({
-      providerLoaders: { [ModelProvider.LobeHub]: loader },
+      providerLoaders: { [ModelProvider.OpenAI]: loader },
     });
 
-    const lobehubModels = models.filter((m) => m.providerId === ModelProvider.LobeHub);
+    const lobehubModels = models.filter((m) => m.providerId === ModelProvider.OpenAI);
     expect(lobehubModels.find((m) => m.id === 'gpt-5')?.knowledgeCutoff).toBe('2020-01');
     expect(lobehubModels.find((m) => m.id === 'gpt-5-mini')?.knowledgeCutoff).toBe('2024-05');
-  });
-});
-
-describe('ChatGPT subscription models', () => {
-  it('advertises reasoning replay support', () => {
-    const models = LOBE_DEFAULT_MODEL_LIST.filter(
-      (model) => model.providerId === ModelProvider.ChatGPT,
-    );
-
-    expect(models).toHaveLength(8);
-    expect(
-      models.every((model) => model.settings?.extendParams?.includes('preserveThinking')),
-    ).toBe(true);
   });
 });
 
@@ -123,33 +94,6 @@ describe('OpenAI audio models', () => {
   });
 });
 
-describe('OpenCode Go models', () => {
-  it('registers the Muse Spark Contributor series', () => {
-    const models = LOBE_DEFAULT_MODEL_LIST.filter(
-      (model) =>
-        model.providerId === ModelProvider.OpenCodeCodingPlan && model.id.startsWith('muse-spark-'),
-    );
-
-    expect(models.map(({ id }) => id)).toEqual([
-      'muse-spark-1.2-contributor',
-      'muse-spark-1.3-contributor',
-    ]);
-    expect(models.find(({ id }) => id === 'muse-spark-1.3-contributor')).toEqual(
-      expect.objectContaining({
-        abilities: expect.objectContaining({
-          functionCall: true,
-          reasoning: true,
-          structuredOutput: true,
-          vision: true,
-        }),
-        contextWindowTokens: 1_048_576,
-        enabled: true,
-        maxOutput: 131_072,
-      }),
-    );
-  });
-});
-
 describe('Moonshot models', () => {
   it('advertises Kimi K3 reasoning effort controls', () => {
     const kimiK3 = LOBE_DEFAULT_MODEL_LIST.find(
@@ -157,31 +101,6 @@ describe('Moonshot models', () => {
     );
 
     expect(kimiK3?.settings?.extendParams).toContain('kimiK3ReasoningEffort');
-  });
-});
-
-describe('Hunyuan models', () => {
-  it('registers Hy3 with agent capabilities', () => {
-    const hy3 = LOBE_DEFAULT_MODEL_LIST.find(
-      (model) => model.providerId === ModelProvider.Hunyuan && model.id === 'hy3',
-    );
-
-    expect(hy3).toEqual(
-      expect.objectContaining({
-        abilities: expect.objectContaining({
-          functionCall: true,
-          reasoning: true,
-          structuredOutput: true,
-        }),
-        contextWindowTokens: 256_000,
-        enabled: true,
-        maxOutput: 128_000,
-        settings: {
-          extendParams: ['hy3ReasoningEffort'],
-        },
-        type: 'chat',
-      }),
-    );
   });
 });
 
@@ -214,82 +133,6 @@ describe('MiniMax video models', () => {
     // The UI's References mode clears the frame slots and submits only imageUrls, so the
     // reference slot alone must allow the full pool the v2 API accepts.
     expect((h3?.parameters as { imageUrls?: { maxCount?: number } })?.imageUrls?.maxCount).toBe(9);
-  });
-});
-
-describe('Google rolling model aliases', () => {
-  it('tracks the current Flash and Flash-Lite model versions', () => {
-    const googleModels = LOBE_DEFAULT_MODEL_LIST.filter((model) => model.providerId === 'google');
-    const flashLatest = googleModels.find((model) => model.id === 'gemini-flash-latest');
-    const flash = googleModels.find((model) => model.id === 'gemini-3.8-flash');
-    const flashLiteLatest = googleModels.find((model) => model.id === 'gemini-flash-lite-latest');
-    const flashLite = googleModels.find((model) => model.id === 'gemini-3.5-flash-lite');
-
-    expect(flashLatest).toEqual(
-      expect.objectContaining({
-        description: 'Points to gemini-3.8-flash',
-        knowledgeCutoff: '2026-03',
-      }),
-    );
-    expect(flashLatest?.pricing).toEqual(flash?.pricing);
-    expect(flashLatest?.settings?.disabledParams).toEqual(['temperature', 'top_p']);
-
-    expect(flashLiteLatest).toEqual(
-      expect.objectContaining({
-        description: 'Points to gemini-3.5-flash-lite',
-        knowledgeCutoff: '2026-03',
-      }),
-    );
-    expect(flashLiteLatest?.pricing).toEqual(flashLite?.pricing);
-    expect(flashLiteLatest?.settings?.disabledParams).toEqual(['temperature', 'top_p']);
-  });
-});
-
-describe('Google Gemini 3.1 Flash Image models', () => {
-  it('registers stable IDs without removing the preview compatibility cards', () => {
-    const googleModels = LOBE_DEFAULT_MODEL_LIST.filter(
-      (model) => model.providerId === ModelProvider.Google,
-    );
-    const stableImageModel = googleModels.find(
-      (model) => model.id === 'gemini-3.1-flash-image:image',
-    );
-
-    expect(googleModels).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          enabled: true,
-          id: 'gemini-3.1-flash-image',
-          releasedAt: '2026-05-28',
-          type: 'chat',
-        }),
-        expect.objectContaining({
-          enabled: true,
-          id: 'gemini-3.1-flash-image:image',
-          releasedAt: '2026-05-28',
-          type: 'image',
-        }),
-        expect.objectContaining({
-          enabled: false,
-          id: 'gemini-3.1-flash-image-preview',
-          releasedAt: '2026-02-26',
-          type: 'chat',
-        }),
-        expect.objectContaining({
-          enabled: false,
-          id: 'gemini-3.1-flash-image-preview:image',
-          releasedAt: '2026-02-26',
-          type: 'image',
-        }),
-      ]),
-    );
-    expect(stableImageModel?.pricing?.units).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ name: 'textInput', rate: 0.5 }),
-        expect.objectContaining({ name: 'imageInput', rate: 0.5 }),
-        expect.objectContaining({ name: 'textOutput', rate: 3 }),
-        expect.objectContaining({ name: 'imageOutput', rate: 60 }),
-      ]),
-    );
   });
 });
 
@@ -349,9 +192,6 @@ describe('recent direct-provider models', () => {
 
   it.each([
     ['openai', 'gpt-6-astra', 'gpt6ReasoningEffort'],
-    ['google', 'gemini-3.8-flash', 'thinkingLevel3'],
-    ['vertexai', 'gemini-3.8-flash', 'thinkingLevel3'],
-    ['xai', 'grok-4.6', 'grok4_6ReasoningEffort'],
     ['qwen', 'qwen3.8-max', 'qwen38ReasoningEffort'],
     ['qwen', 'qwen3.8-max-0902', 'qwen38ReasoningEffort'],
   ])('exposes %s/%s with its reasoning controls', (providerId, id, reasoningParam) => {
@@ -365,42 +205,5 @@ describe('recent direct-provider models', () => {
       type: 'chat',
     });
     expect(model?.settings?.extendParams).toContain(reasoningParam);
-  });
-});
-
-describe('Gemini 3.8 introductory pricing', () => {
-  it.each(['google', 'vertexai'])('uses the published output rate for %s', (providerId) => {
-    const model = LOBE_DEFAULT_MODEL_LIST.find(
-      (entry) => entry.providerId === providerId && entry.id === 'gemini-3.8-flash',
-    );
-    expect(model?.pricing?.units).toContainEqual({
-      name: 'textOutput',
-      rate: 3.75,
-      strategy: 'fixed',
-      unit: 'millionTokens',
-    });
-  });
-});
-
-describe('subscription model catalogs', () => {
-  it.each([
-    ['chatgpt', 'gpt-6-astra', 'gpt6ReasoningEffort'],
-    ['chatgpt', 'gpt-6.1-sol', 'gpt6ReasoningEffort'],
-    ['supergrok', 'grok-4.6', 'grok4_6ReasoningEffort'],
-  ])('exposes %s/%s without usage-based pricing', (providerId, id, reasoningParam) => {
-    const model = LOBE_DEFAULT_MODEL_LIST.find(
-      (entry) => entry.providerId === providerId && entry.id === id,
-    );
-    expect(model).toMatchObject({ enabled: true, type: 'chat' });
-    expect(model?.pricing).toBeUndefined();
-    expect(model?.settings?.extendParams).toContain(reasoningParam);
-  });
-
-  it('keeps the ChatGPT context cap and thinking preservation', () => {
-    const model = LOBE_DEFAULT_MODEL_LIST.find(
-      (entry) => entry.providerId === 'chatgpt' && entry.id === 'gpt-6-astra',
-    );
-    expect(model?.contextWindowTokens).toBe(272_000);
-    expect(model?.settings?.extendParams).toContain('preserveThinking');
   });
 });

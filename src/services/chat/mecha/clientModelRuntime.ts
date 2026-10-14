@@ -1,3 +1,7 @@
+import { AgentRuntimeError } from '@lobechat/model-runtime/utils/createError';
+import { ChatErrorType } from '@lobechat/types';
+import { assertModelProvider } from 'model-bank/modelProvider';
+
 import { createPayloadWithKeyVaults } from '../../_auth';
 
 export interface InitializeWithClientStoreOptions {
@@ -20,6 +24,11 @@ export const initializeWithClientStore = async ({
   runtimeProvider,
   payload,
 }: InitializeWithClientStoreOptions) => {
+  assertModelProvider(provider);
+  if (runtimeProvider && runtimeProvider !== provider)
+    throw AgentRuntimeError.createError(ChatErrorType.BadRequest, {
+      message: 'Runtime provider must match the selected provider',
+    });
   const { ModelRuntime } = await import('@lobechat/model-runtime');
 
   /**

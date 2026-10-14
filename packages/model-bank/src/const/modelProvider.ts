@@ -1,91 +1,42 @@
+import { z } from 'zod';
+
 export enum ModelProvider {
-  Ai21 = 'ai21',
-  Ai302 = 'ai302',
-  Ai360 = 'ai360',
-  AiHubMix = 'aihubmix',
-  AkashChat = 'akashchat',
-  AntGroup = 'antgroup',
-  Anthropic = 'anthropic',
-  Azure = 'azure',
-  AzureAI = 'azureai',
-  Baichuan = 'baichuan',
-  BailianCodingPlan = 'bailiancodingplan',
-  Bedrock = 'bedrock',
-  Bfl = 'bfl',
-  Cerebras = 'cerebras',
-  ChatGPT = 'chatgpt',
-  Cloudflare = 'cloudflare',
-  Cohere = 'cohere',
-  CometAPI = 'cometapi',
-  ComfyUI = 'comfyui',
   DeepSeek = 'deepseek',
-  Fal = 'fal',
-  FireworksAI = 'fireworksai',
-  GiteeAI = 'giteeai',
-  Github = 'github',
-  GithubCopilot = 'githubcopilot',
-  GLMCodingPlan = 'glmcodingplan',
-  Google = 'google',
-  Groq = 'groq',
-  Higress = 'higress',
-  HuggingFace = 'huggingface',
-  Hunyuan = 'hunyuan',
-  InfiniAI = 'infiniai',
-  InternLM = 'internlm',
-  Jina = 'jina',
-  KimiCodingPlan = 'kimicodingplan',
-  LMStudio = 'lmstudio',
-  LobeHub = 'lobehub',
-  LongCat = 'longcat',
-  Meta = 'meta',
   Minimax = 'minimax',
-  MinimaxCodingPlan = 'minimaxcodingplan',
-  Mistral = 'mistral',
-  ModelScope = 'modelscope',
   Moonshot = 'moonshot',
-  Nebius = 'nebius',
-  NewAPI = 'newapi',
-  Novita = 'novita',
-  Nvidia = 'nvidia',
-  Ollama = 'ollama',
-  OllamaCloud = 'ollamacloud',
   OpenAI = 'openai',
-  OpenCodeCodingPlan = 'opencodecodingplan',
-  OpenCodeZen = 'opencodezen',
-  OpenRouter = 'openrouter',
-  Perplexity = 'perplexity',
-  PPIO = 'ppio',
-  Qiniu = 'qiniu',
   Qwen = 'qwen',
-  Replicate = 'replicate',
-  SambaNova = 'sambanova',
-  Search1API = 'search1api',
-  SenseNova = 'sensenova',
-  SiliconCloud = 'siliconcloud',
-  Spark = 'spark',
-  Stepfun = 'stepfun',
-  Straico = 'straico',
-  StreamLake = 'streamlake',
-  SuperGrok = 'supergrok',
-  Taichu = 'taichu',
-  TencentCloud = 'tencentcloud',
-  TogetherAI = 'togetherai',
-  Unsloth = 'unsloth',
-  Upstage = 'upstage',
-  V0 = 'v0',
-  VercelAIGateway = 'vercelaigateway',
-  VertexAI = 'vertexai',
-  VLLM = 'vllm',
   Volcengine = 'volcengine',
-  VolcengineCodingPlan = 'volcenginecodingplan',
-  Wenxin = 'wenxin',
-  XAI = 'xai',
-  XiaomiMiMo = 'xiaomimimo',
-  Xinference = 'xinference',
-  ZenMux = 'zenmux',
-  ZeroOne = 'zeroone',
   ZhiPu = 'zhipu',
 }
 
-/** lowercase key union of the ModelProvider enum, e.g. 'openai' | 'anthropic' | … */
+/** Stable product provider identities. SDK protocol names are separate from this registry. */
+export const SUPPORTED_MODEL_PROVIDERS = Object.values(ModelProvider);
+const supportedProviderSet = new Set<string>(SUPPORTED_MODEL_PROVIDERS);
+
+export const isModelProvider = (provider: string): provider is ModelProvider =>
+  supportedProviderSet.has(provider);
+
+export class UnsupportedModelProviderError extends Error {
+  readonly errorType = 'UnsupportedProvider';
+  readonly error: { message: string; provider: string };
+
+  constructor(readonly provider: string) {
+    super(`Model provider "${provider}" is no longer supported. Select a supported provider.`);
+    this.name = 'UnsupportedModelProviderError';
+    this.error = { message: this.message, provider };
+  }
+}
+
+export function assertModelProvider(provider: string): asserts provider is ModelProvider {
+  if (!isModelProvider(provider)) throw new UnsupportedModelProviderError(provider);
+}
+
+export const ModelProviderSchema = z
+  .string()
+  .refine((provider): boolean => isModelProvider(provider), {
+    message:
+      'UnsupportedProvider: this model provider is no longer supported. Select a supported provider.',
+  });
+
 export type ModelProviderKey = Lowercase<keyof typeof ModelProvider>;

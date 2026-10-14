@@ -14,6 +14,12 @@ const { loadModelsMock, mockDefaultModelList } = vi.hoisted(() => ({
   loadModelsMock: vi.fn(),
   mockDefaultModelList: [
     {
+      id: 'gemini-2.5-pro',
+      providerId: 'openai',
+      displayName: 'Gemini 2.5 Pro',
+      abilities: { search: true, functionCall: true, reasoning: true, vision: true },
+    },
+    {
       contextWindowTokens: 8192,
       displayName: 'GPT-4',
       enabled: true,
@@ -110,21 +116,13 @@ const { loadModelsMock, mockDefaultModelList } = vi.hoisted(() => ({
 }));
 
 // Mock the import
-vi.mock('model-bank', () => ({
+vi.mock('model-bank', async () => ({
+  isModelProvider: (await import('model-bank/modelProvider')).isModelProvider,
   AiModelTypeSchema: {
     options: ['chat', 'embedding', 'tts', 'asr', 'image', 'video', 'text2music', 'realtime'],
   },
   LOBE_DEFAULT_MODEL_LIST: mockDefaultModelList,
   loadModels: vi.fn().mockResolvedValue(mockDefaultModelList),
-  ModelProvider: { LobeHub: 'lobehub' },
-  // 新增 provider 专用清单，供 findKnownModelByProvider 使用
-  google: [
-    {
-      id: 'gemini-2.5-pro',
-      displayName: 'Gemini 2.5 Pro',
-      abilities: { search: true, functionCall: true, reasoning: true, vision: true },
-    },
-  ],
 }));
 
 vi.mock('@lobechat/business-model-bank/model-config', () => ({
@@ -306,11 +304,12 @@ describe('modelParse', () => {
         expect(out[0].search).toBe(false);
       });
 
-      it('google: gemini-* with "-image-" in id should infer imageOutput=true via keywords and remain chat type', async () => {
+      // Model families can be hosted by a retained provider; the hint is the service provider ID.
+      it('shared Gemini parsing: "-image-" should infer imageOutput=true and remain chat type', async () => {
         const out = await processModelList(
           [{ id: 'gemini-2.5-image-pro' }],
           MODEL_LIST_CONFIGS.google,
-          'google',
+          'openai',
         );
         expect(out).toHaveLength(1);
         expect(out[0].imageOutput).toBe(true);
@@ -318,11 +317,11 @@ describe('modelParse', () => {
         expect(out[0].type).toBe('chat');
       });
 
-      it('google: Nano Banana ids without "-image-" infer image output and thinking but no function calling', async () => {
+      it('shared Gemini parsing: Nano Banana ids infer image output and thinking but no function calling', async () => {
         const out = await processModelList(
           [{ id: 'gemini-nano-banana-2.1' }, { id: 'nano-banana-pro-preview' }],
           MODEL_LIST_CONFIGS.google,
-          'google',
+          'openai',
         );
         expect(out).toHaveLength(2);
         for (const model of out) {
@@ -336,11 +335,11 @@ describe('modelParse', () => {
         expect(out.find((m) => m.id === 'nano-banana-pro-preview')?.search).toBe(false);
       });
 
-      it('google: gemini-* without "-image-" should not infer imageOutput and get search=true via known google model', async () => {
+      it('shared Gemini parsing: models without "-image-" use the hosted model metadata', async () => {
         const out = await processModelList(
           [{ id: 'gemini-2.5-pro' }],
           MODEL_LIST_CONFIGS.google,
-          'google',
+          'openai',
         );
         expect(out).toHaveLength(1);
         expect(out[0].displayName).toBe('Gemini 2.5 Pro');
@@ -349,7 +348,7 @@ describe('modelParse', () => {
       });
     });
 
-    it('xiaomimimo: should infer multimodal abilities for omni', async () => {
+    it('shared MiMo parsing: should infer multimodal abilities for hosted omni models', async () => {
       const out = await processModelList(
         [
           { id: 'mimo-v2-flash' },
@@ -359,7 +358,7 @@ describe('modelParse', () => {
           { id: 'mimo-v2.5' },
         ],
         MODEL_LIST_CONFIGS.xiaomimimo,
-        'xiaomimimo',
+        'openai',
       );
 
       expect(out).toHaveLength(5);
@@ -393,7 +392,7 @@ describe('modelParse', () => {
       const tts = await processModelList(
         [{ id: 'mimo-v2-tts' }],
         MODEL_LIST_CONFIGS.xiaomimimo,
-        'xiaomimimo',
+        'openai',
       );
 
       expect(tts).toHaveLength(1);
@@ -620,7 +619,7 @@ describe('modelParse', () => {
     it('should ignore invalid remote type values in mixed provider processing', async () => {
       const modelList = [{ id: 'newapi-custom-model', type: 'model' }];
 
-      const result = await processMultiProviderModelList(modelList, 'newapi');
+      const result = await processMultiProviderModelList(modelList, 'openai');
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('newapi-custom-model');
@@ -679,7 +678,7 @@ describe('modelParse', () => {
 
     // New search & imageOutput focused tests for multi-provider path
     describe('search and imageOutput (processMultiProviderModelList)', () => {
-      it('non-google provider gemini-2.5-pro should still get search=true via known google model', async () => {
+      it('non-google provider gemini-2.5-pro should still get search=true via known model metadata', async () => {
         // Simulate a mixed/custom list. Even if called with providerid='openai',
         // detectModelProvider('gemini-2.5-pro') => 'google'
         // knownModel (google list) has abilities.search=true, so final search=true
@@ -892,7 +891,7 @@ describe('modelParse', () => {
           { id: 'gemini-extend-restricted' },
         ];
 
-        const result = await processMultiProviderModelList(modelList, 'vercelaigateway');
+        const result = await processMultiProviderModelList(modelList, 'openai');
 
         const openaiModel = result.find((m) => m.id === 'gpt-openai-extend-restricted');
         const googleModel = result.find((m) => m.id === 'gemini-extend-restricted');
@@ -902,7 +901,7 @@ describe('modelParse', () => {
         expect(googleModel?.settings?.extendParams).toEqual(['thinkingBudget', 'urlContext']);
       });
 
-      it('should allow known extendParams for non-OpenAI providers when provider is aihubmix', async () => {
+      it('keeps known model-family parameters behind a retained provider', async () => {
         const mockModule = await import('model-bank');
         mockModule.LOBE_DEFAULT_MODEL_LIST.push({
           id: 'gemini-extend-aihubmix',
@@ -914,14 +913,14 @@ describe('modelParse', () => {
 
         const modelList = [{ id: 'gemini-extend-aihubmix' }];
 
-        const result = await processMultiProviderModelList(modelList, 'aihubmix');
+        const result = await processMultiProviderModelList(modelList, 'openai');
 
         const googleModel = result.find((m) => m.id === 'gemini-extend-aihubmix');
 
         expect(googleModel?.settings?.extendParams).toEqual(['thinkingBudget', 'urlContext']);
       });
 
-      it('should omit search settings when provider is neither aihubmix nor newapi', async () => {
+      it('does not copy builtin search settings to an OpenAI-compatible endpoint', async () => {
         const mockModule = await import('model-bank');
         const initialLength = mockModule.LOBE_DEFAULT_MODEL_LIST.length;
         mockModule.LOBE_DEFAULT_MODEL_LIST.push({
@@ -936,67 +935,13 @@ describe('modelParse', () => {
         try {
           const result = await processMultiProviderModelList(
             [{ id: 'search-settings-model' }],
-            'vercelaigateway',
+            'openai',
           );
 
           const model = result.find((m) => m.id === 'search-settings-model');
 
           expect(model?.settings?.searchImpl).toBeUndefined();
           expect(model?.settings?.searchProvider).toBeUndefined();
-        } finally {
-          mockModule.LOBE_DEFAULT_MODEL_LIST.splice(initialLength);
-        }
-      });
-
-      it('should include search settings when provider is aihubmix', async () => {
-        const mockModule = await import('model-bank');
-        const initialLength = mockModule.LOBE_DEFAULT_MODEL_LIST.length;
-        mockModule.LOBE_DEFAULT_MODEL_LIST.push({
-          id: 'search-settings-aihubmix',
-          displayName: 'Search Settings Aihubmix',
-          settings: {
-            searchImpl: 'params',
-            searchProvider: 'builtin',
-          },
-        } as any);
-
-        try {
-          const result = await processMultiProviderModelList(
-            [{ id: 'search-settings-aihubmix' }],
-            'aihubmix',
-          );
-
-          const model = result.find((m) => m.id === 'search-settings-aihubmix');
-
-          expect(model?.settings?.searchImpl).toBe('params');
-          expect(model?.settings?.searchProvider).toBe('builtin');
-        } finally {
-          mockModule.LOBE_DEFAULT_MODEL_LIST.splice(initialLength);
-        }
-      });
-
-      it('should include search settings when provider is newapi', async () => {
-        const mockModule = await import('model-bank');
-        const initialLength = mockModule.LOBE_DEFAULT_MODEL_LIST.length;
-        mockModule.LOBE_DEFAULT_MODEL_LIST.push({
-          id: 'search-settings-newapi',
-          displayName: 'Search Settings NewAPI',
-          settings: {
-            searchImpl: 'params',
-            searchProvider: 'builtin',
-          },
-        } as any);
-
-        try {
-          const result = await processMultiProviderModelList(
-            [{ id: 'search-settings-newapi' }],
-            'newapi',
-          );
-
-          const model = result.find((m) => m.id === 'search-settings-newapi');
-
-          expect(model?.settings?.searchImpl).toBe('params');
-          expect(model?.settings?.searchProvider).toBe('builtin');
         } finally {
           mockModule.LOBE_DEFAULT_MODEL_LIST.splice(initialLength);
         }

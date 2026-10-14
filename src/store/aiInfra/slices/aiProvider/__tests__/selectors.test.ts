@@ -5,14 +5,14 @@ import { aiProviderSelectors } from '../selectors';
 describe('aiProviderSelectors', () => {
   const mockState: any = {
     aiProviderList: [
-      { id: 'provider1', enabled: true, sort: 1, source: 'builtin' },
-      { id: 'provider2', enabled: false, sort: 2, source: 'builtin' },
-      { id: 'provider3', enabled: true, sort: 0, source: 'builtin' },
+      { id: 'openai', enabled: true, sort: 1, source: 'builtin' },
+      { id: 'moonshot', enabled: false, sort: 2, source: 'builtin' },
+      { id: 'minimax', enabled: true, sort: 0, source: 'builtin' },
       { id: 'custom1', enabled: false, sort: 3, source: 'custom' },
     ],
     aiProviderDetailMap: {
-      provider1: {
-        id: 'provider1',
+      openai: {
+        id: 'openai',
         keyVaults: {
           baseURL: 'https://api.example.com',
           apiKey: 'test-key',
@@ -21,9 +21,9 @@ describe('aiProviderSelectors', () => {
     },
     aiProviderLoadingIds: ['loading-provider'],
     aiProviderConfigUpdatingIds: ['updating-provider'],
-    activeAiProvider: 'provider1',
+    activeAiProvider: 'openai',
     aiProviderRuntimeConfig: {
-      provider1: {
+      openai: {
         keyVaults: {
           baseURL: 'https://api.example.com',
           apiKey: 'test-key',
@@ -33,7 +33,7 @@ describe('aiProviderSelectors', () => {
         },
         fetchOnClient: true,
       },
-      provider2: {
+      moonshot: {
         keyVaults: {
           baseURL: 'https://api2.example.com',
         },
@@ -59,8 +59,8 @@ describe('aiProviderSelectors', () => {
     it('should return enabled providers sorted by sort', () => {
       const result = aiProviderSelectors.enabledAiProviderList(mockState);
       expect(result).toEqual([
-        { id: 'provider3', enabled: true, sort: 0, source: 'builtin' },
-        { id: 'provider1', enabled: true, sort: 1, source: 'builtin' },
+        { id: 'minimax', enabled: true, sort: 0, source: 'builtin' },
+        { id: 'openai', enabled: true, sort: 1, source: 'builtin' },
       ]);
     });
   });
@@ -68,24 +68,24 @@ describe('aiProviderSelectors', () => {
   describe('disabledAiProviderList', () => {
     it('should return disabled builtin providers', () => {
       const result = aiProviderSelectors.disabledAiProviderList(mockState);
-      expect(result).toEqual([{ id: 'provider2', enabled: false, sort: 2, source: 'builtin' }]);
+      expect(result).toEqual([{ id: 'moonshot', enabled: false, sort: 2, source: 'builtin' }]);
     });
   });
 
   describe('disabledCustomAiProviderList', () => {
-    it('should return disabled custom providers', () => {
+    it('does not offer removed custom providers', () => {
       const result = aiProviderSelectors.disabledCustomAiProviderList(mockState);
-      expect(result).toEqual([{ id: 'custom1', enabled: false, sort: 3, source: 'custom' }]);
+      expect(result).toEqual([]);
     });
   });
 
   describe('isProviderEnabled', () => {
     it('should return true for enabled provider', () => {
-      expect(aiProviderSelectors.isProviderEnabled('provider1')(mockState)).toBe(true);
+      expect(aiProviderSelectors.isProviderEnabled('openai')(mockState)).toBe(true);
     });
 
     it('should return false for disabled provider', () => {
-      expect(aiProviderSelectors.isProviderEnabled('provider2')(mockState)).toBe(false);
+      expect(aiProviderSelectors.isProviderEnabled('moonshot')(mockState)).toBe(false);
     });
   });
 
@@ -95,14 +95,14 @@ describe('aiProviderSelectors', () => {
     });
 
     it('should return false for non-loading provider', () => {
-      expect(aiProviderSelectors.isProviderLoading('provider1')(mockState)).toBe(false);
+      expect(aiProviderSelectors.isProviderLoading('openai')(mockState)).toBe(false);
     });
   });
 
   describe('providerDetailById', () => {
     it('should return provider detail by id', () => {
-      expect(aiProviderSelectors.providerDetailById('provider1')(mockState)).toEqual(
-        mockState.aiProviderDetailMap.provider1,
+      expect(aiProviderSelectors.providerDetailById('openai')(mockState)).toEqual(
+        mockState.aiProviderDetailMap.openai,
       );
     });
 
@@ -114,7 +114,7 @@ describe('aiProviderSelectors', () => {
   describe('activeProviderConfig', () => {
     it('should return active provider config from map', () => {
       expect(aiProviderSelectors.activeProviderConfig(mockState)).toEqual(
-        mockState.aiProviderDetailMap.provider1,
+        mockState.aiProviderDetailMap.openai,
       );
     });
 
@@ -126,11 +126,11 @@ describe('aiProviderSelectors', () => {
 
   describe('isAiProviderConfigLoading', () => {
     it('should return true if provider is not in detail map (not loaded)', () => {
-      expect(aiProviderSelectors.isAiProviderConfigLoading('provider2')(mockState)).toBe(true);
+      expect(aiProviderSelectors.isAiProviderConfigLoading('moonshot')(mockState)).toBe(true);
     });
 
     it('should return false if provider is in detail map (loaded)', () => {
-      expect(aiProviderSelectors.isAiProviderConfigLoading('provider1')(mockState)).toBe(false);
+      expect(aiProviderSelectors.isAiProviderConfigLoading('openai')(mockState)).toBe(false);
     });
   });
 
@@ -143,7 +143,7 @@ describe('aiProviderSelectors', () => {
       const stateWithoutEndpoint = {
         ...mockState,
         aiProviderDetailMap: {
-          provider1: { id: 'provider1', keyVaults: {} },
+          openai: { id: 'openai', keyVaults: {} },
         },
       };
       expect(aiProviderSelectors.isActiveProviderEndpointNotEmpty(stateWithoutEndpoint)).toBe(
@@ -161,7 +161,7 @@ describe('aiProviderSelectors', () => {
       const stateWithoutApiKey = {
         ...mockState,
         aiProviderDetailMap: {
-          provider1: { id: 'provider1', keyVaults: {} },
+          openai: { id: 'openai', keyVaults: {} },
         },
       };
       expect(aiProviderSelectors.isActiveProviderApiKeyNotEmpty(stateWithoutApiKey)).toBe(false);
@@ -170,8 +170,8 @@ describe('aiProviderSelectors', () => {
 
   describe('providerConfigById', () => {
     it('should return config for existing provider', () => {
-      expect(aiProviderSelectors.providerConfigById('provider1')(mockState)).toEqual(
-        mockState.aiProviderRuntimeConfig.provider1,
+      expect(aiProviderSelectors.providerConfigById('openai')(mockState)).toEqual(
+        mockState.aiProviderRuntimeConfig.openai,
       );
     });
 
@@ -192,7 +192,7 @@ describe('aiProviderSelectors', () => {
     });
 
     it('should return false for non-updating provider', () => {
-      expect(aiProviderSelectors.isProviderConfigUpdating('provider1')(mockState)).toBe(false);
+      expect(aiProviderSelectors.isProviderConfigUpdating('openai')(mockState)).toBe(false);
     });
   });
 
@@ -203,45 +203,45 @@ describe('aiProviderSelectors', () => {
       ).toBe(false);
     });
 
-    it('should follow user settings for whitelisted providers', () => {
-      expect(aiProviderSelectors.isProviderFetchOnClient('ollama')(mockState)).toBe(true);
+    it('ignores saved client execution flags for removed providers', () => {
+      expect(aiProviderSelectors.isProviderFetchOnClient('ollama')(mockState)).toBe(false);
     });
 
     it('should return false if no endpoint and api key', () => {
       const state = {
         ...mockState,
         aiProviderRuntimeConfig: {
-          test: {
+          openai: {
             keyVaults: {},
             settings: {},
           },
         },
       };
-      expect(aiProviderSelectors.isProviderFetchOnClient('test')(state)).toBe(false);
+      expect(aiProviderSelectors.isProviderFetchOnClient('openai')(state)).toBe(false);
     });
 
     it('should return true if only baseURL exists', () => {
       const state = {
         ...mockState,
         aiProviderRuntimeConfig: {
-          test: {
+          openai: {
             keyVaults: { baseURL: 'http://test.com' },
             settings: {},
           },
         },
       };
-      expect(aiProviderSelectors.isProviderFetchOnClient('test')(state)).toBe(true);
+      expect(aiProviderSelectors.isProviderFetchOnClient('openai')(state)).toBe(true);
     });
 
     it('should follow user settings if both endpoint and api key exist', () => {
-      expect(aiProviderSelectors.isProviderFetchOnClient('provider1')(mockState)).toBe(true);
+      expect(aiProviderSelectors.isProviderFetchOnClient('openai')(mockState)).toBe(true);
     });
   });
 
   describe('providerKeyVaults', () => {
     it('should return key vaults for existing provider', () => {
-      expect(aiProviderSelectors.providerKeyVaults('provider1')(mockState)).toEqual(
-        mockState.aiProviderRuntimeConfig.provider1.keyVaults,
+      expect(aiProviderSelectors.providerKeyVaults('openai')(mockState)).toEqual(
+        mockState.aiProviderRuntimeConfig.openai.keyVaults,
       );
     });
 
@@ -256,23 +256,21 @@ describe('aiProviderSelectors', () => {
 
   describe('isProviderHasBuiltinSearch', () => {
     it('should return true if provider has search mode', () => {
-      expect(aiProviderSelectors.isProviderHasBuiltinSearch('provider1')(mockState)).toBe(true);
+      expect(aiProviderSelectors.isProviderHasBuiltinSearch('openai')(mockState)).toBe(true);
     });
 
     it('should return false if provider has no search mode', () => {
-      expect(aiProviderSelectors.isProviderHasBuiltinSearch('provider2')(mockState)).toBe(false);
+      expect(aiProviderSelectors.isProviderHasBuiltinSearch('moonshot')(mockState)).toBe(false);
     });
   });
 
   describe('isProviderHasBuiltinSearchConfig', () => {
     it('should return false if search mode is internal', () => {
-      expect(aiProviderSelectors.isProviderHasBuiltinSearchConfig('provider1')(mockState)).toBe(
-        false,
-      );
+      expect(aiProviderSelectors.isProviderHasBuiltinSearchConfig('openai')(mockState)).toBe(false);
     });
 
     it('should return false if no search mode exists', () => {
-      expect(aiProviderSelectors.isProviderHasBuiltinSearchConfig('provider2')(mockState)).toBe(
+      expect(aiProviderSelectors.isProviderHasBuiltinSearchConfig('moonshot')(mockState)).toBe(
         false,
       );
     });
@@ -283,28 +281,28 @@ describe('aiProviderSelectors', () => {
       const state = {
         ...mockState,
         aiProviderRuntimeConfig: {
-          test: {
+          openai: {
             config: { enableResponseApi: true },
             keyVaults: {},
             settings: {},
           },
         },
       };
-      expect(aiProviderSelectors.isProviderEnableResponseApi('test')(state)).toBe(true);
+      expect(aiProviderSelectors.isProviderEnableResponseApi('openai')(state)).toBe(true);
     });
 
     it('should return false when config explicitly sets enableResponseApi to false', () => {
       const state = {
         ...mockState,
         aiProviderRuntimeConfig: {
-          test: {
+          openai: {
             config: { enableResponseApi: false },
             keyVaults: {},
             settings: {},
           },
         },
       };
-      expect(aiProviderSelectors.isProviderEnableResponseApi('test')(state)).toBe(false);
+      expect(aiProviderSelectors.isProviderEnableResponseApi('openai')(state)).toBe(false);
     });
 
     it('should return true by default for openai provider', () => {

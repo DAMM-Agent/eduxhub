@@ -119,12 +119,12 @@ describe('Home portrait visibility', () => {
     expect(screen.getByTestId('portrait-bubble')).toBeInTheDocument();
   }, 20000);
 
-  it('lets a live model promotion speak through the portrait without changing its shortcuts', async () => {
+  it('shows a live promotion in the portrait with model shortcuts hidden', async () => {
     await renderHome({ promo: <span>Campaign</span> });
 
     expect(screen.getByTestId('home-portrait')).toBeInTheDocument();
     expect(within(screen.getByTestId('portrait-bubble')).getByText('Campaign')).toBeInTheDocument();
-    expect(screen.getByTestId('new-model-shortcuts')).toBeInTheDocument();
+    expect(screen.queryByTestId('new-model-shortcuts')).not.toBeInTheDocument();
     expect(
       within(screen.getByTestId('home-header')).queryByText('Campaign'),
     ).not.toBeInTheDocument();
@@ -138,7 +138,7 @@ describe('Home portrait visibility', () => {
 
     expect(screen.queryByTestId('portrait-bubble')).not.toBeInTheDocument();
     expect(screen.queryByText('Campaign')).not.toBeInTheDocument();
-    expect(screen.getByTestId('new-model-shortcuts')).toBeInTheDocument();
+    expect(screen.queryByTestId('new-model-shortcuts')).not.toBeInTheDocument();
   }, 20000);
 
   it('takes the bubble down with the portrait when the preference is off', async () => {
@@ -161,7 +161,7 @@ describe('Home portrait visibility', () => {
 
     expect(screen.getByTestId('home-input-area')).toHaveAttribute('data-mode', 'chat');
     expect(screen.getByTestId('home-mode-content')).toHaveAttribute('data-mode', 'chat');
-    expect(screen.getByTestId('new-model-shortcuts')).toBeInTheDocument();
+    expect(screen.queryByTestId('new-model-shortcuts')).not.toBeInTheDocument();
   }, 20000);
 
   it('opens the home dashboard in task mode for the post-onboarding entry', async () => {

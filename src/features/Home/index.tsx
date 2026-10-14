@@ -429,10 +429,11 @@ const Home = memo(() => {
         gap={24}
       >
         <Flexbox className={styles.inputArea} gap={12}>
+          {/* Eduxwork：统一隐藏首页“上新”模型推荐栏。 */}
           <InputArea
-            showNewModelShortcuts
             inputValue={inputValue}
             mode={mode}
+            showNewModelShortcuts={false}
             onInputValueChange={handleInputValueChange}
             onModeChange={setMode}
           />

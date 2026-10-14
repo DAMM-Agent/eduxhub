@@ -12,6 +12,7 @@ import {
   type SpendOrigin,
 } from '@lobechat/types';
 import debug from 'debug';
+import { assertModelProvider } from 'model-bank/modelProvider';
 import { z } from 'zod';
 
 import { getProviderContentPolicyErrorMessage } from '@/business/server/getProviderContentPolicyErrorMessage';
@@ -158,12 +159,15 @@ export const videoRouter = router({
       provider,
     });
 
-    const { resolvedModelId } = await resolveBusinessModelMapping(provider, model);
+    let resolvedModelId = model;
 
     const abortController = new AbortController();
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
+      assertModelProvider(provider);
+      ({ resolvedModelId } = await resolveBusinessModelMapping(provider, model));
+
       const pollingPromise = async (signal: AbortSignal) => {
         log('Initializing agent runtime for provider: %s', provider);
         const modelRuntime = await initModelRuntimeFromDB(
@@ -292,6 +296,7 @@ export const videoRouter = router({
         inferenceId,
       });
 
+      const unsupportedProvider = error?.errorType === AsyncTaskErrorType.UnsupportedProvider;
       const providerContentPolicyMessage = await getProviderContentPolicyErrorMessage({
         error,
         provider,
@@ -301,12 +306,16 @@ export const videoRouter = router({
 
       await asyncTaskModel.update(asyncTaskId, {
         error: new AsyncTaskError(
-          providerContentPolicyMessage
-            ? AsyncTaskErrorType.ProviderContentModeration
-            : AsyncTaskErrorType.ServerError,
-          providerContentPolicyMessage ??
-            'Background polling failed: ' +
-              (error instanceof Error ? error.message : 'Unknown error'),
+          unsupportedProvider
+            ? AsyncTaskErrorType.UnsupportedProvider
+            : providerContentPolicyMessage
+              ? AsyncTaskErrorType.ProviderContentModeration
+              : AsyncTaskErrorType.ServerError,
+          unsupportedProvider
+            ? AsyncTaskErrorType.UnsupportedProvider
+            : (providerContentPolicyMessage ??
+                'Background polling failed: ' +
+                  (error instanceof Error ? error.message : 'Unknown error')),
         ),
         status: AsyncTaskStatus.Error,
       });

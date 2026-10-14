@@ -228,6 +228,21 @@ describe('ErrorMessageExtra', () => {
     useChatStore.setState({ activeTopicId: null as any, topicDetailMap: {} });
   });
 
+  it.each([AgentRuntimeErrorType.OllamaServiceUnavailable, AgentRuntimeErrorType.OllamaBizError])(
+    'keeps historical %s readable without an installation or download card',
+    (type) => {
+      render(
+        <ErrorMessageExtra
+          data={{ error: { body: { provider: 'ollama' }, type }, id: 'legacy-error' }}
+          error={{ message: 'Historical provider error' }}
+        />,
+      );
+
+      expect(screen.getByText('Historical provider error')).toBeInTheDocument();
+      expect(dynamicComponentPropsMock).not.toHaveBeenCalled();
+    },
+  );
+
   // Regression: the standalone surfaces (Assistant / Task / AgentCouncil) render
   // this card through `customErrorRender` WITHOUT an `onRegenerate`, and the
   // retry affordance used to be gated on that prop. Verified live: a plain

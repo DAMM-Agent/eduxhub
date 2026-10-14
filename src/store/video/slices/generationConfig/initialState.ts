@@ -10,8 +10,8 @@ import {
 
 import type { VideoImageInputMode, VideoImageInputs } from './imageInputMode';
 
-export const DEFAULT_AI_VIDEO_PROVIDER = ModelProvider.LobeHub;
-export const DEFAULT_AI_VIDEO_MODEL = 'dreamina-seedance-2-0-260128';
+export const DEFAULT_AI_VIDEO_PROVIDER = ModelProvider.Volcengine;
+export const DEFAULT_AI_VIDEO_MODEL = 'doubao-seedance-2-0-260128';
 
 const seedance20Params: VideoModelParamsSchema = {
   aspectRatio: {

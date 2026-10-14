@@ -7,7 +7,7 @@ import type {
   ExtendParamsType,
   LobeDefaultAiModelListItem,
 } from 'model-bank';
-import { AiModelTypeSchema, ModelProvider } from 'model-bank';
+import { AiModelTypeSchema, isModelProvider } from 'model-bank';
 
 import type { ModelProviderKey } from '../types';
 import { EMBEDDING_MODEL_KEYWORDS } from './modelTypeKeywords';
@@ -296,6 +296,7 @@ const findKnownModelByProvider = async (
   modelId: string,
   provider: ModelProviderKey | keyof typeof MODEL_LIST_CONFIGS,
 ): Promise<any> => {
+  if (!isModelProvider(provider)) return null;
   const lowerModelId = modelId.toLowerCase();
 
   try {
@@ -487,12 +488,7 @@ const getProviderLocalConfig = async (
 ): Promise<AiFullModelCard[] | null> => {
   if (!provider) return null;
 
-  if (provider === ModelProvider.LobeHub) {
-    const { loadModels } =
-      (await import('@lobechat/business-model-bank/model-config')) as BusinessModelConfigModule;
-    const models = await loadModels();
-    return models.filter((model) => model.providerId === ModelProvider.LobeHub);
-  }
+  if (!isModelProvider(provider)) return null;
 
   try {
     const modules = (await import('model-bank')) as unknown as Record<
@@ -758,11 +754,8 @@ export const processMultiProviderModelList = async (
       }
 
       const includeKnownExtendParams =
-        providerid === 'aihubmix' ||
-        providerid === 'newapi' ||
-        detectedProvider === 'openai' ||
-        detectedProvider === 'google';
-      const includeSearchSettings = providerid === 'aihubmix' || providerid === 'newapi';
+        detectedProvider === 'openai' || detectedProvider === 'google';
+      const includeSearchSettings = false;
 
       // If providerid is provided and has local configuration, try to get the model's enabled status from it
       const providerLocalModelConfig = getModelLocalEnableConfig(
@@ -774,29 +767,6 @@ export const processMultiProviderModelList = async (
         includeKnownExtendParams,
         includeSearchSettings,
       });
-
-      if (processedModel && includeSearchSettings && providerLocalModelConfig?.settings) {
-        const localSettings = providerLocalModelConfig.settings as AiModelSettings | undefined;
-        const searchImpl = localSettings?.searchImpl;
-        const searchProvider = localSettings?.searchProvider;
-
-        if (searchImpl || searchProvider) {
-          const updatedSettings: AiModelSettings = processedModel.settings
-            ? { ...processedModel.settings }
-            : ({} as AiModelSettings);
-
-          if (searchImpl) {
-            updatedSettings.searchImpl = searchImpl;
-          }
-
-          if (searchProvider) {
-            updatedSettings.searchProvider = searchProvider;
-          }
-
-          processedModel.settings =
-            Object.keys(updatedSettings).length > 0 ? updatedSettings : undefined;
-        }
-      }
 
       // If model is found in local configuration, use its enabled status
       if (

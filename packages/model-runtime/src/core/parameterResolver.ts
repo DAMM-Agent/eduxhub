@@ -1,7 +1,7 @@
 import {
   hasTemperatureTopPConflict,
   shouldOmitSamplingParams,
-} from '../providers/anthropic/modelId';
+} from './anthropicCompatibleFactory/modelId';
 
 /**
  * Chat completion parameter configuration

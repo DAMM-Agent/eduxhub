@@ -1,47 +1,12 @@
+import { Button } from '@lobehub/ui/base-ui';
+import { isModelProvider } from 'model-bank/modelProvider';
+import { useTranslation } from 'react-i18next';
+
+import AsyncError from '@/components/AsyncError';
 import SurfaceSkeleton from '@/components/Skeleton/Surface';
 import dynamic from '@/libs/next/dynamic';
 
-const NewAPI = dynamic(() => import('./newapi'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
 const OpenAI = dynamic(() => import('./openai'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const VertexAI = dynamic(() => import('./vertexai'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const GitHub = dynamic(() => import('./github'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const Ollama = dynamic(() => import('./ollama'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const Unsloth = dynamic(() => import('./unsloth'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const ComfyUI = dynamic(() => import('./comfyui'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const Cloudflare = dynamic(() => import('./cloudflare'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const Bedrock = dynamic(() => import('./bedrock'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const AzureAI = dynamic(() => import('./azureai'), {
-  loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
-  ssr: false,
-});
-const Azure = dynamic(() => import('./azure'), {
   loading: () => <SurfaceSkeleton header={false} variant={'form'} />,
   ssr: false,
 });
@@ -62,47 +27,22 @@ type ProviderDetailPageProps = {
 const ProviderDetailPage = (props: ProviderDetailPageProps) => {
   const { id, onProviderSelect } = props;
 
-  switch (id) {
-    case 'all': {
-      return <ProviderGrid onProviderSelect={onProviderSelect} />;
-    }
-    case 'azure': {
-      return <Azure />;
-    }
-    case 'azureai': {
-      return <AzureAI />;
-    }
-    case 'bedrock': {
-      return <Bedrock />;
-    }
-    case 'cloudflare': {
-      return <Cloudflare />;
-    }
-    case 'comfyui': {
-      return <ComfyUI />;
-    }
-    case 'github': {
-      return <GitHub />;
-    }
-    case 'ollama': {
-      return <Ollama />;
-    }
-    case 'newapi': {
-      return <NewAPI />;
-    }
-    case 'openai': {
-      return <OpenAI />;
-    }
-    case 'vertexai': {
-      return <VertexAI />;
-    }
-    case 'unsloth': {
-      return <Unsloth />;
-    }
-    default: {
-      return <DefaultPage id={id} />;
-    }
+  const { t } = useTranslation(['error', 'common']);
+
+  if (id === 'all' || !id) return <ProviderGrid onProviderSelect={onProviderSelect} />;
+  if (!isModelProvider(id)) {
+    return (
+      <AsyncError
+        description={id}
+        title={t('response.UnsupportedProvider')}
+        variant="page"
+        action={
+          <Button onClick={() => onProviderSelect('all')}>{t('back', { ns: 'common' })}</Button>
+        }
+      />
+    );
   }
+  return id === 'openai' ? <OpenAI /> : <DefaultPage id={id} />;
 };
 
 export default ProviderDetailPage;

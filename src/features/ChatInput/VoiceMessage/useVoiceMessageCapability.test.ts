@@ -1,5 +1,4 @@
 import { renderHook } from '@testing-library/react';
-import { ModelProvider } from 'model-bank/modelProvider';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useAiInfraStore } from '@/store/aiInfra';
@@ -51,72 +50,39 @@ const audioModel = (id: string, providerId: string) =>
   }) as const;
 
 describe('supportsRawAudioMessage', () => {
-  it.each([
-    [ModelProvider.Google, ModelProvider.Google],
-    [ModelProvider.OpenAI, ModelProvider.OpenAI],
-    [ModelProvider.VertexAI, ModelProvider.VertexAI],
-  ])('enables a model on the supported %s runtime', (provider, runtimeProvider) => {
+  it('supports a declared audio model through the retained OpenAI adapter', () => {
     expect(
       supportsRawAudioMessage({
-        isCuratedModel: false,
         modelSupportsAudio: true,
-        provider,
-        runtimeProvider,
+        provider: 'openai',
+        runtimeProvider: 'openai',
       }),
     ).toBe(true);
-  });
-
-  it('enables a curated audio model on the AiHubMix router', () => {
     expect(
       supportsRawAudioMessage({
-        isCuratedModel: true,
-        modelSupportsAudio: true,
-        provider: ModelProvider.AiHubMix,
-        runtimeProvider: ModelProvider.AiHubMix,
-      }),
-    ).toBe(true);
-  });
-
-  it('trusts the server-curated audio capability on the LobeHub router', () => {
-    expect(
-      supportsRawAudioMessage({
-        isCuratedModel: false,
-        modelSupportsAudio: true,
-        provider: ModelProvider.LobeHub,
-        runtimeProvider: ModelProvider.LobeHub,
-      }),
-    ).toBe(true);
-  });
-
-  it('fails closed for a router model that is not in the curated audio model list', () => {
-    expect(
-      supportsRawAudioMessage({
-        isCuratedModel: false,
-        modelSupportsAudio: true,
-        provider: ModelProvider.AiHubMix,
-        runtimeProvider: ModelProvider.AiHubMix,
-      }),
-    ).toBe(false);
-  });
-
-  it('fails closed for an unsupported runtime even when the model claims audio support', () => {
-    expect(
-      supportsRawAudioMessage({
-        isCuratedModel: false,
-        modelSupportsAudio: true,
-        provider: ModelProvider.Anthropic,
-        runtimeProvider: ModelProvider.Anthropic,
-      }),
-    ).toBe(false);
-  });
-
-  it('requires the selected model to declare audio support', () => {
-    expect(
-      supportsRawAudioMessage({
-        isCuratedModel: true,
         modelSupportsAudio: false,
-        provider: ModelProvider.Google,
-        runtimeProvider: ModelProvider.Google,
+        provider: 'openai',
+        runtimeProvider: 'openai',
+      }),
+    ).toBe(false);
+  });
+  it.each(['google', 'vertexai', 'aihubmix', 'lobehub', 'anthropic', 'custom-provider'])(
+    'rejects %s even if an old setting maps it to OpenAI',
+    (provider) => {
+      expect(
+        supportsRawAudioMessage({ modelSupportsAudio: true, provider, runtimeProvider: provider }),
+      ).toBe(false);
+      expect(
+        supportsRawAudioMessage({ modelSupportsAudio: true, provider, runtimeProvider: 'openai' }),
+      ).toBe(false);
+    },
+  );
+  it('does not substitute another retained provider for the selected identity', () => {
+    expect(
+      supportsRawAudioMessage({
+        modelSupportsAudio: true,
+        provider: 'qwen',
+        runtimeProvider: 'openai',
       }),
     ).toBe(false);
   });
@@ -137,14 +103,14 @@ describe('useVoiceMessageCapability', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'deepseek-v4-flash',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     useAiInfraStore.setState({ enabledAiModels: [model] });
     serverConfig.enableMultimodalUnderstanding = true;
     serverConfig.multimodalUnderstanding = {
       model: 'fallback-audio-model',
-      provider: 'fallback-provider',
+      provider: 'openai',
     };
 
     const { result } = renderHook(() => useVoiceMessageCapability(model.id, model.providerId));
@@ -164,14 +130,14 @@ describe('useVoiceMessageCapability', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'deepseek-v4-pro',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     useAiInfraStore.setState({ enabledAiModels: [model] });
     serverConfig.enableMultimodalUnderstanding = true;
     serverConfig.multimodalUnderstanding = {
       model: 'fallback-audio-model',
-      provider: 'fallback-provider',
+      provider: 'openai',
     };
 
     expect(
@@ -188,14 +154,14 @@ describe('useVoiceMessageCapability', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'workspace-text-model',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     useAiInfraStore.setState({ enabledAiModels: [model] });
     serverConfig.enableMultimodalUnderstanding = true;
     serverConfig.multimodalUnderstanding = {
       model: 'fallback-audio-model',
-      provider: 'fallback-provider',
+      provider: 'openai',
     };
 
     expect(
@@ -216,7 +182,7 @@ describe('useVoiceMessageCapability', () => {
   });
 
   it('keeps native audio enabled when Agent mode is off', () => {
-    const model = audioModel('native-audio', ModelProvider.Google);
+    const model = audioModel('native-audio', 'openai');
     useAiInfraStore.setState({ enabledAiModels: [model] });
 
     expect(
@@ -229,7 +195,7 @@ describe('useVoiceMessageCapability', () => {
   });
 
   it('keeps native audio enabled while the member mode preference is loading', () => {
-    const model = audioModel('native-audio-loading', ModelProvider.Google);
+    const model = audioModel('native-audio-loading', 'openai');
     useAiInfraStore.setState({ enabledAiModels: [model] });
 
     expect(
@@ -247,14 +213,14 @@ describe('useVoiceMessageCapability', () => {
       abilities: { functionCall: false },
       enabled: true,
       id: 'text-model-without-tools',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'deepseek',
       type: 'chat',
     } as const;
     useAiInfraStore.setState({ enabledAiModels: [model] });
     serverConfig.enableMultimodalUnderstanding = true;
     serverConfig.multimodalUnderstanding = {
       model: 'fallback-audio-model',
-      provider: 'fallback-provider',
+      provider: 'openai',
     };
 
     const { result } = renderHook(() => useVoiceMessageCapability(model.id, model.providerId));
@@ -262,7 +228,7 @@ describe('useVoiceMessageCapability', () => {
     expect(result.current).toBe(false);
   });
 
-  it('uses a custom provider OpenAI runtime only when its model declares audio support', () => {
+  it('keeps removed custom providers unavailable despite a saved OpenAI SDK type', () => {
     const model = audioModel('custom-audio', 'custom-provider');
     useAiInfraStore.setState({
       aiProviderRuntimeConfig: {
@@ -279,7 +245,7 @@ describe('useVoiceMessageCapability', () => {
       useVoiceMessageCapability('custom-audio', 'custom-provider'),
     );
 
-    expect(result.current).toBe(true);
+    expect(result.current).toBe(false);
   });
 
   it('disables a custom provider whose runtime has no raw-audio adapter', () => {
@@ -302,30 +268,28 @@ describe('useVoiceMessageCapability', () => {
     expect(result.current).toBe(false);
   });
 
-  it('requires a router audio model to match the curated model card', () => {
-    const model = audioModel('gemini-audio', ModelProvider.AiHubMix);
+  it('does not enable a removed router via stale builtin metadata', () => {
+    const model = audioModel('gemini-audio', 'aihubmix');
     useAiInfraStore.setState({
       builtinAiModelList: [model],
       enabledAiModels: [model],
     });
 
-    const { result } = renderHook(() =>
-      useVoiceMessageCapability('gemini-audio', ModelProvider.AiHubMix),
-    );
+    const { result } = renderHook(() => useVoiceMessageCapability('gemini-audio', 'aihubmix'));
 
-    expect(result.current).toBe(true);
+    expect(result.current).toBe(false);
   });
 
-  it('does not require the curated LobeHub card to duplicate the runtime audio capability', () => {
+  it('rejects a removed LobeHub provider even with runtime audio capability', () => {
     const id = 'gemini-3.5-flash';
     useAiInfraStore.setState({
       builtinAiModelList: [],
-      enabledAiModels: [audioModel(id, ModelProvider.LobeHub)],
+      enabledAiModels: [audioModel(id, 'lobehub')],
     });
 
-    const { result } = renderHook(() => useVoiceMessageCapability(id, ModelProvider.LobeHub));
+    const { result } = renderHook(() => useVoiceMessageCapability(id, 'lobehub'));
 
-    expect(result.current).toBe(true);
+    expect(result.current).toBe(false);
   });
 
   it('keeps a curated LobeHub model disabled when runtime audio support is absent', () => {
@@ -333,7 +297,7 @@ describe('useVoiceMessageCapability', () => {
       abilities: { functionCall: true },
       enabled: true,
       id: 'text-only-model',
-      providerId: ModelProvider.LobeHub,
+      providerId: 'lobehub',
       type: 'chat',
     } as const;
     useAiInfraStore.setState({
@@ -341,9 +305,7 @@ describe('useVoiceMessageCapability', () => {
       enabledAiModels: [model],
     });
 
-    const { result } = renderHook(() =>
-      useVoiceMessageCapability('text-only-model', ModelProvider.LobeHub),
-    );
+    const { result } = renderHook(() => useVoiceMessageCapability('text-only-model', 'lobehub'));
 
     expect(result.current).toBe(false);
   });

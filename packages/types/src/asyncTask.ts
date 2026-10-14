@@ -56,6 +56,7 @@ export enum AsyncTaskErrorType {
    */
   TaskTriggerError = 'TaskTriggerError',
   Timeout = 'TaskTimeout',
+  UnsupportedProvider = 'UnsupportedProvider',
   /* ↓ cloud slot | workspace freeze ↓ */
   /**
    * Workspace was manually frozen by an admin; spend is blocked until unfrozen.

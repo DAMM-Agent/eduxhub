@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { ModelProviderSchema } from '../const/modelProvider';
 import type {
   AiModelForSelect,
   AiModelReasoningConfig,
@@ -106,41 +107,16 @@ export interface OAuthDeviceFlowKeyVault {
  * only when provider use different sdk
  * we will add a type
  */
+/** SDK wire formats supported by the retained provider implementations. */
 export const AiProviderSDKEnum = {
   Anthropic: 'anthropic',
-  Azure: 'azure',
-  AzureAI: 'azureai',
-  Bedrock: 'bedrock',
-  Cloudflare: 'cloudflare',
-  ComfyUI: 'comfyui',
-  Google: 'google',
-  Huggingface: 'huggingface',
-  Ollama: 'ollama',
   Openai: 'openai',
   Qwen: 'qwen',
-  Replicate: 'replicate',
   Router: 'router',
   Volcengine: 'volcengine',
 } as const;
-
 export type AiProviderSDKType = (typeof AiProviderSDKEnum)[keyof typeof AiProviderSDKEnum];
-
-const AiProviderSdkTypes = [
-  'anthropic',
-  'comfyui',
-  'openai',
-  'ollama',
-  'azure',
-  'azureai',
-  'bedrock',
-  'cloudflare',
-  'google',
-  'huggingface',
-  'replicate',
-  'router',
-  'volcengine',
-  'qwen',
-] as const satisfies readonly AiProviderSDKType[];
+const AiProviderSdkTypes = ['anthropic', 'openai', 'qwen', 'router', 'volcengine'] as const;
 
 export interface AiProviderSettings {
   /**
@@ -293,7 +269,7 @@ const AiProviderKeyVaultsSchema = z
 export const CreateAiProviderSchema = z.object({
   config: z.object({}).passthrough().optional(),
   description: z.string().optional(),
-  id: z.string(),
+  id: ModelProviderSchema,
   keyVaults: AiProviderKeyVaultsSchema.optional(),
   logo: z.string().optional(),
   name: z.string(),
